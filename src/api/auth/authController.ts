@@ -100,8 +100,8 @@ export const signinUser = async (
       .cookie("refresh_token", refresh_token, {
         httpOnly: false,
         maxAge: exp,
-        sameSite: "none",
-        secure: true, // TODO if served over HTTPS change to true
+        // sameSite: "none",
+        // secure: true, // TODO if served over HTTPS change to true
       })
       .status(200)
       .json(response);

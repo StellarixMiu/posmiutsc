@@ -18,7 +18,8 @@ const UserSchema = z.object({
       invalid_type_error: "`email` must be a string",
     })
     .email("`email` must be a valid email")
-    .endsWith("@gmail.com", "`email` must be a valid email"),
+    .endsWith("@gmail.com", "`email` must be a valid email")
+    .toLowerCase(),
   password: z
     .string({
       required_error: "`password` is required",

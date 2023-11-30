@@ -29,6 +29,7 @@ const StoreSchema = z.object({
     })
     .email("`email` must be a valid email")
     .endsWith("@gmail.com", "`email` must be a valid email")
+    .toLowerCase()
     .optional(),
   logo: z
     .instanceof(ObjectId)

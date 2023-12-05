@@ -14,6 +14,7 @@ import {
   getStoreById,
   getStoreByUserId,
   getStoreLogo,
+  getStoreOwner,
   patchStore,
 } from "./storeController";
 import upload from "../../middleware/imageMiddleware";
@@ -65,6 +66,15 @@ router.get(
   }),
   verifyToken(),
   getStoreByUserId
+);
+
+router.get(
+  "/:id/owner",
+  requestValidation({
+    params: ParamsWithId,
+  }),
+  verifyToken(),
+  getStoreOwner
 );
 
 router.get(

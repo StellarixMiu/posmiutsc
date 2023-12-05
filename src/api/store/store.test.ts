@@ -813,6 +813,150 @@ describe("GET: `/api/stores/user/:id", () => {
   });
 });
 
+describe("GET: `/api/stores/:id/owner`", () => {
+  it("Should return 200 (successfully)", async () => {
+    const { status, body } = await supertest(app)
+      .get(`/api/stores/${store._id.toString()}/owner`)
+      .set("Cookie", user.cookies)
+      .set("Authorization", user.bearer_token);
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      data: {
+        _id: expect.any(String),
+        email: "n***********no11@gmail.com",
+        name: "nugraha suryono",
+        phone_number: "628*******684",
+      },
+      message: "Get store owner successfully!!",
+      status: 200,
+      success: true,
+    });
+  });
+
+  describe("wrong data type", () => {
+    it("Should return 422 (wrong params type)", async () => {
+      const { status, body } = await supertest(app)
+        .get(`/api/stores/${invalid_params}/owner`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: expect.any(Array),
+        message: "ZodError!!!",
+        status: 422,
+        success: false,
+      });
+    });
+  });
+
+  it("Should return 401 (different auth id)", async () => {
+    const { status, body } = await supertest(app)
+      .get(`/api/stores/${store._id.toString()}/owner`)
+      .set("Cookie", user.cookies)
+      .set("Authorization", second_user.bearer_token);
+
+    expect(status).toBe(401);
+    expect(body).toEqual({
+      data: "Mismatch between `auth_id` and `cookies_id`",
+      message: "Unauthorized!!!",
+      status: 401,
+      success: false,
+    });
+  });
+
+  it("Should return 401 (no cookies)", async () => {
+    const { status, body } = await supertest(app)
+      .get(`/api/stores/${store._id.toString()}/owner`)
+      .set("Authorization", user.bearer_token);
+
+    expect(status).toBe(401);
+    expect(body).toEqual({
+      data: "Request cookies not defined",
+      message: "Unauthorized!!!",
+      status: 401,
+      success: false,
+    });
+  });
+
+  it("Should return 401 (no auth header)", async () => {
+    const { status, body } = await supertest(app)
+      .get(`/api/stores/${store._id.toString()}/owner`)
+      .set("Cookie", user.cookies);
+
+    expect(status).toBe(401);
+    expect(body).toEqual({
+      data: "Authorization header is needed",
+      message: "Unauthorized!!!",
+      status: 401,
+      success: false,
+    });
+  });
+
+  it("Should return 403 (invalid auth header)", async () => {
+    const { status, body } = await supertest(app)
+      .get(`/api/stores/${store._id.toString()}/owner`)
+      .set("Cookie", user.cookies)
+      .set("Authorization", invalid_bearer);
+
+    expect(status).toBe(403);
+    expect(body).toEqual({
+      data: "Invalid token at authorization header",
+      message: "Forbidden!!!",
+      status: 403,
+      success: false,
+    });
+  });
+
+  it("Should return 403 (no access store)", async () => {
+    const { status, body } = await supertest(app)
+      .get(`/api/stores/${store._id.toString()}/owner`)
+      .set("Cookie", second_user.cookies)
+      .set("Authorization", second_user.bearer_token);
+
+    expect(status).toBe(403);
+    expect(body).toEqual({
+      data: "You do not have access rights to this store",
+      message: "Forbidden!!!",
+      status: 403,
+      success: false,
+    });
+  });
+
+  describe("'SOMETHING' not found", () => {
+    it("Should return 404 ('User' not found)", async () => {
+      const { status, body } = await supertest(app)
+        .get(`/api/stores/${store._id.toString()}/owner`)
+        .set("Cookie", lost_user.cookies)
+        .set("Authorization", lost_user.bearer_token);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "User not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Store' not found)", async () => {
+      const { status, body } = await supertest(app)
+        .get(`/api/stores/${lost_store._id.toString()}/owner`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Store not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+  });
+});
+
 describe("GET: `/api/stores/:id/logos`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
@@ -1103,7 +1247,7 @@ describe("PATCH: `/api/stores/:id`", () => {
         categories: [],
         coupons: [],
         customers: [],
-        email: "SGroceries2@gmail.com",
+        email: "sgroceries2@gmail.com",
         employees: [],
         invoice: {
           isEnable: true,

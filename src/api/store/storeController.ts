@@ -28,6 +28,22 @@ import {
   ImageSchemaWithId,
 } from "../../utils/image/imageModel";
 
+const censoredCredentials = (
+  start: number,
+  end: number,
+  value: Array<string>
+): string => {
+  const final_value: Array<string> = [];
+  value.forEach((val: string, i: number) => {
+    if (i < value.length - end && i > start) {
+      final_value.push("*");
+    } else {
+      final_value.push(val);
+    }
+  });
+  return final_value.join("");
+};
+
 export const getStore = async (
   store_id: string
 ): Promise<StoreSchemaWithId> => {
@@ -290,6 +306,59 @@ export const getStoreByUserId = async (
         return data;
       })
     );
+    return res.status(200).json(response);
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const getStoreOwner = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
+    const store_id = req.params.id;
+    const { auth_token } = req.body;
+
+    checkForIdMismatch(auth_token.id, cookies.id);
+
+    let user: UserSchemaWithId = await getUser(auth_token.id);
+    let store: StoreSchemaWithId = await Store.findOne({
+      _id: new ObjectId(store_id),
+    }).then(async (value) => {
+      if (value === null)
+        throw new RequestError(404, "Not Found!!!", "Store not found");
+      return value;
+    });
+
+    checkUserWorkAtStore(user, store._id);
+
+    let owner: UserSchemaWithId = await getUser(store.owner.toString());
+    const { _id, name, email, phone_number } = owner;
+    const censored_email = censoredCredentials(
+      0,
+      4,
+      email.split("@")[0].split("")
+    );
+    const censored_phone_number = censoredCredentials(
+      2,
+      3,
+      phone_number.split("")
+    );
+    const response = new ResponseData(
+      true,
+      200,
+      "Get store owner successfully!!",
+      {
+        _id,
+        name,
+        email: `${censored_email}@${email.split("@")[1]}`,
+        phone_number: censored_phone_number,
+      }
+    );
+
     return res.status(200).json(response);
   } catch (error: any) {
     next(error);

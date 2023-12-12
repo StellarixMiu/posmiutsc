@@ -7,7 +7,7 @@ import { getProduct } from "../product/productController";
 import { RequestError } from "../../middleware/errorMiddleware";
 import { EditorSchema } from "../../utils/editor/editorModel";
 import { UserSchemaWithId } from "../user/userModel";
-import { ProductSchemaWithId } from "../product/productModel";
+import { Product, ProductSchemaWithId } from "../product/productModel";
 import { Store, StoreSchemaWithId } from "../store/storeModel";
 import {
   Category,
@@ -59,6 +59,7 @@ export const createCategory = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
+    const products: Array<string | ObjectId> = [];
     const category_data: CreateCategorySchema =
       await CreateCategorySchema.parseAsync(req.body);
     const { auth_token } = req.body;
@@ -70,10 +71,37 @@ export const createCategory = async (
 
     checkUserWorkAtStore(user, store._id);
 
+    if (category_data.products.length !== 0) {
+      for (let i = 0; i < category_data.products.length; i++) {
+        const product_id = category_data.products[i];
+        const product: ProductSchemaWithId = await Product.findOne(
+          new ObjectId(product_id)
+        ).then((value) => {
+          if (value === null)
+            throw new RequestError(404, "Not Found!!!", "Product not found");
+          if (!store.products.includes(value._id))
+            throw new RequestError(
+              404,
+              "Not Found!!!",
+              "Product is not available in store"
+            );
+          return value;
+        });
+        products.push(product._id);
+      }
+    }
+
     const editor: EditorSchema = await createEditor(user._id.toString());
     let category: CategorySchemaWithId = await Category.findOneAndUpdate(
       { name: category_data.name },
-      { $push: { stores: { id: category_data.store_id, products: [] } } },
+      {
+        $push: {
+          stores: {
+            id: category_data.store_id,
+            products: products || [],
+          },
+        },
+      },
       { returnDocument: "after" }
     ).then(async (value) => {
       if (value !== null)

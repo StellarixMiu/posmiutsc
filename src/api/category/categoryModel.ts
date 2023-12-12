@@ -1,7 +1,22 @@
 import { z } from "zod";
-import { ObjectId, WithId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
+import { ObjectId, WithId } from "mongodb";
 import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
+
+const ProductsObjectSchema = z.object({
+  products: z
+    .instanceof(ObjectId)
+    .or(
+      z.string().refine((value) => {
+        try {
+          return new ObjectId(value);
+        } catch (error) {
+          return false;
+        }
+      }, "The provided value is not a valid ObjectId")
+    )
+    .array(),
+});
 
 const CategorySchema = z.object({
   name: z
@@ -26,25 +41,10 @@ const CategorySchema = z.object({
     })
     .array(),
 });
-const CreateCategorySchema = CategorySchema.pick({ name: true }).merge(
-  BodyWithStoreId
-);
-const ProductToCategorySchema = BodyWithStoreId.merge(
-  z.object({
-    products: z
-      .instanceof(ObjectId)
-      .or(
-        z.string().refine((value) => {
-          try {
-            return new ObjectId(value);
-          } catch (error) {
-            return false;
-          }
-        }, "The provided value is not a valid ObjectId")
-      )
-      .array(),
-  })
-);
+const CreateCategorySchema = CategorySchema.pick({ name: true })
+  .merge(BodyWithStoreId)
+  .merge(ProductsObjectSchema);
+const ProductToCategorySchema = BodyWithStoreId.merge(ProductsObjectSchema);
 const GetCategorySchemaByStoreId = z.object({
   limit: z.number().nonnegative().finite().gte(1).lte(10).default(5).optional(),
 });

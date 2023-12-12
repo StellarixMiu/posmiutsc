@@ -257,6 +257,7 @@ const testCategory = async (user: any, payload: any) => {
     .send({
       ...payload,
       store_id: user.store._id.toString(),
+      products: [],
     })
     .then(({ body }) => {
       return body.data;

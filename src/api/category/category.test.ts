@@ -1,8 +1,7 @@
 import supertest from "supertest";
-import { ObjectId } from "mongodb";
 import app from "../../app";
 import createTest from "../../test/createTest";
-import { CategorySchemaWithId, Category } from "./categoryModel";
+import { CategorySchemaWithId } from "./categoryModel";
 
 let category: CategorySchemaWithId;
 
@@ -36,6 +35,7 @@ describe("POST: `/api/categories/`", () => {
     const payload = {
       name: "Electronics",
       store_id: store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -62,6 +62,7 @@ describe("POST: `/api/categories/`", () => {
       const payload = {
         name: 11,
         store_id: invalid_store_id,
+        products: {},
       };
       const { status, body } = await supertest(app)
         .post("/api/categories/")
@@ -78,10 +79,13 @@ describe("POST: `/api/categories/`", () => {
       });
     });
 
+    it.todo("Should return 200 (with products id successfully)");
+
     it("Should return 422 (wrong 'store_id' data type)", async () => {
       const payload = {
         name: "Electronics",
         store_id: invalid_store_id,
+        products: [],
       };
       const { status, body } = await supertest(app)
         .post("/api/categories/")
@@ -102,6 +106,7 @@ describe("POST: `/api/categories/`", () => {
       const payload = {
         name: 11,
         store_id: store._id.toString(),
+        products: [],
       };
       const { status, body } = await supertest(app)
         .post("/api/categories/")
@@ -117,12 +122,15 @@ describe("POST: `/api/categories/`", () => {
         success: false,
       });
     });
+
+    it.todo("Should return 422 (wrong 'products' data type)");
   });
 
   it("Should return 401 (different auth id)", async () => {
     const payload = {
       name: "Electronics",
       store_id: store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -143,6 +151,7 @@ describe("POST: `/api/categories/`", () => {
     const payload = {
       name: "Electronics",
       store_id: store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -162,6 +171,7 @@ describe("POST: `/api/categories/`", () => {
     const payload = {
       name: "Electronics",
       store_id: store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -181,6 +191,7 @@ describe("POST: `/api/categories/`", () => {
     const payload = {
       name: "Electronics",
       store_id: store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -201,6 +212,7 @@ describe("POST: `/api/categories/`", () => {
     const payload = {
       name: "Electronics",
       store_id: second_store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -221,6 +233,7 @@ describe("POST: `/api/categories/`", () => {
     const payload = {
       name: "Fruits",
       store_id: store._id.toString(),
+      products: [],
     };
     const { status, body } = await supertest(app)
       .post("/api/categories/")
@@ -242,6 +255,7 @@ describe("POST: `/api/categories/`", () => {
       const payload = {
         name: "Electronics",
         store_id: lost_store._id.toString(),
+        products: [],
       };
       const { status, body } = await supertest(app)
         .post("/api/categories/")
@@ -262,6 +276,7 @@ describe("POST: `/api/categories/`", () => {
       const payload = {
         name: "Electronics",
         store_id: lost_store._id.toString(),
+        products: [],
       };
       const { status, body } = await supertest(app)
         .post("/api/categories/")

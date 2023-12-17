@@ -1,5 +1,5 @@
-import multer from "multer";
 import { Request } from "express";
+import multer from "multer";
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
@@ -7,12 +7,12 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, callback) => {
     const date = new Date();
-    callback(null, `${date.getTime()}.webp`);
+    callback(null, `${date.getTime()}.${file.mimetype.split("/")[1]}`);
   },
 });
 
 const upload = multer({
-  storage: storage,
+  storage,
   limits: {
     fileSize: 5 * 1024 * 1024,
   },

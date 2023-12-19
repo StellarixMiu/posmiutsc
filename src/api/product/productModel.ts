@@ -66,20 +66,6 @@ const ProductSchema = z.object({
   created: EditorSchema,
   updated: EditorSchema,
 });
-const ProductImage = BodyWithStoreId.merge(
-  z.object({
-    image_id: z.string().refine(
-      (value) => {
-        try {
-          return new ObjectId(value);
-        } catch (error) {
-          return false;
-        }
-      },
-      { message: "`image_id` should be an valid ObjectId" }
-    ),
-  })
-);
 const CreateProductSchema = ProductSchema.omit({
   slug: true,
   created: true,
@@ -110,7 +96,6 @@ const PatchStockProductSchema = BodyWithStoreId.merge(
 );
 
 type ProductSchema = z.infer<typeof ProductSchema>;
-type ProductImage = z.infer<typeof ProductImage>;
 type CreateProductSchema = z.infer<typeof CreateProductSchema>;
 type GetProductSchemaByStoreId = z.infer<typeof GetProductSchemaByStoreId>;
 type GetProductSchemaBySlug = z.infer<typeof GetProductSchemaBySlug>;
@@ -125,7 +110,6 @@ Product.createIndex({ slug: 1 }, { unique: true });
 export {
   Product,
   ProductSchema,
-  ProductImage,
   CreateProductSchema,
   GetProductSchemaByStoreId,
   GetProductSchemaBySlug,

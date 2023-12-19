@@ -1,4 +1,3 @@
-import * as fs from "fs-extra";
 import supertest from "supertest";
 import { ObjectId } from "mongodb";
 import { deleteR2Image } from "../../utils/image/imageController";
@@ -20,7 +19,6 @@ let lost_store: any;
 
 const invalid_params = "xsH9yCllOpLaQHPu4UoQjY24";
 const invalid_bearer = "Bearer 6510f40adeb51c904347309d";
-const invalid_image_id = "ro6tGCx14yQdBiCX64pyCktT";
 
 beforeAll(async () => {
   const users = await createTest();
@@ -451,12 +449,14 @@ describe("POST: `/api/stores/:id/logo`", () => {
 
     expect(status).toBe(400);
     expect(body).toEqual({
-      data: "Store already has an logo",
+      data: "Store already has a logo",
       message: "Bad Request!!!",
       status: 400,
       success: false,
     });
   });
+
+  it.skip("Should return 500 ('Failed to upload image to Cloudflare R2')", () => {});
 
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {

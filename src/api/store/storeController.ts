@@ -165,11 +165,7 @@ export const addStoreLogo = async (
     checkUserWorkAtStore(user, store._id);
 
     if (store.logo)
-      throw new RequestError(
-        400,
-        "Bad Request!!!",
-        "Store already has an logo"
-      );
+      throw new RequestError(400, "Bad Request!!!", "Store already has a logo");
 
     const editor: EditorSchema = await createEditor(user._id.toString());
 

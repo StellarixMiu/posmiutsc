@@ -1311,7 +1311,7 @@ describe("PATCH: `/api/stores/:id/logo`", () => {
         type: "grocery",
         website: "",
       },
-      message: "Patch product image successfully!!",
+      message: "Patch store logo successfully!!",
       status: 200,
       success: true,
     });

@@ -555,7 +555,7 @@ export const patchStoreLogo = async (
     const response = new ResponseData(
       true,
       200,
-      "Patch product image successfully!!",
+      "Patch store logo successfully!!",
       metadata
     );
     return res.status(200).json(response);

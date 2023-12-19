@@ -103,18 +103,6 @@ const StoreSchema = z.object({
       payment_gateway: false,
     }),
 });
-const StoreLogoSchema = z.object({
-  image_id: z.string().refine(
-    (value) => {
-      try {
-        return new ObjectId(value);
-      } catch (error) {
-        return false;
-      }
-    },
-    { message: "`image_id` should be an valid ObjectId" }
-  ),
-});
 const CreateStoreSchema = StoreSchema.pick({
   name: true,
   address: true,
@@ -134,7 +122,6 @@ const PatchStoreSchema = StoreSchema.pick({
 }).partial();
 
 type StoreSchema = z.infer<typeof StoreSchema>;
-type StoreLogoSchema = z.infer<typeof StoreLogoSchema>;
 type CreateStoreSchema = z.infer<typeof CreateStoreSchema>;
 type GetStoreSchemaByUserId = z.infer<typeof GetStoreSchemaByUserId>;
 type PatchStoreSchema = z.infer<typeof PatchStoreSchema>;
@@ -146,7 +133,6 @@ Store.createIndex({ phone_number: 1 }, { unique: true });
 
 export {
   StoreSchema,
-  StoreLogoSchema,
   CreateStoreSchema,
   GetStoreSchemaByUserId,
   PatchStoreSchema,

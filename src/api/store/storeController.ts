@@ -1,5 +1,4 @@
-import * as fs from "fs-extra";
-import path from "path";
+import * as dotenv from "dotenv";
 import { ObjectId } from "mongodb";
 import { JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
@@ -8,11 +7,21 @@ import { RequestError } from "../../middleware/errorMiddleware";
 import { EditorSchema } from "../../utils/editor/editorModel";
 import { User, UserSchemaWithId } from "../user/userModel";
 import {
+  checkFileType,
+  deleteR2Image,
+  getImage,
+  postR2Image,
+} from "../../utils/image/imageController";
+import {
+  Image,
+  ImageSchema,
+  ImageSchemaWithId,
+} from "../../utils/image/imageModel";
+import {
   CreateStoreSchema,
   GetStoreSchemaByUserId,
   PatchStoreSchema,
   Store,
-  StoreLogoSchema,
   StoreSchema,
   StoreSchemaWithId,
 } from "./storeModel";
@@ -21,12 +30,12 @@ import createEditor from "../../utils/editor/editorController";
 import verifyCookies from "../../utils/cookiesHandler";
 import checkForIdMismatch from "../../utils/CheckId";
 import checkUserWorkAtStore from "../../utils/checkWorkAt";
-import { checkFileType, getImage } from "../../utils/image/imageController";
-import {
-  Image,
-  ImageSchema,
-  ImageSchemaWithId,
-} from "../../utils/image/imageModel";
+
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || "development"}`,
+});
+
+const r2_endpoint: string = process.env.R2_PUBLIC_ENDPOINT as string;
 
 const censoredCredentials = (
   start: number,
@@ -83,6 +92,7 @@ export const createStore = async (
 
     await Store.insertOne(store).then(async (value) => {
       if (!value.acknowledged) throw new Error();
+
       user = await User.findOneAndUpdate(
         { _id: user._id },
         { $push: { work_at: value.insertedId } },
@@ -127,6 +137,15 @@ export const addStoreLogo = async (
 
     if (!file) throw new RequestError(404, "Not Found!!!", "File not found");
 
+    const r2_data = await postR2Image(file, store_id.toString());
+
+    if (!r2_data)
+      throw new RequestError(
+        500,
+        "Internal Server Error!!!",
+        "Failed to upload image to Cloudflare R2"
+      );
+
     checkForIdMismatch(auth_token.id, cookies.id);
     checkFileType(file);
 
@@ -134,10 +153,13 @@ export const addStoreLogo = async (
     let store: StoreSchemaWithId = await getStore(store_id);
     let image: ImageSchema | ImageSchemaWithId = await ImageSchema.parseAsync({
       path: file.path,
+      full_path: `${r2_endpoint}${file.filename.split(".")[0]}`,
       name: file.filename,
       size: file.size,
       mimetype: file.mimetype,
-      owner: user._id,
+      e_tag: r2_data.ETag,
+      version_id: r2_data.VersionId,
+      owner_id: user._id,
     });
 
     checkUserWorkAtStore(user, store._id);
@@ -186,38 +208,39 @@ export const addStoreLogo = async (
     );
     return res.status(200).json(response);
   } catch (error: any) {
+    await deleteR2Image(req.file?.filename.split(".")[0]);
     next(error);
   }
 };
 
-export const addStoreEmployee = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const store_id = req.params.id;
-    const { auth_token } = req.body;
+// export const addStoreEmployee = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
+//     const store_id = req.params.id;
+//     const { auth_token } = req.body;
 
-    checkForIdMismatch(auth_token.id, cookies.id);
+//     checkForIdMismatch(auth_token.id, cookies.id);
 
-    let user: UserSchemaWithId = await getUser(auth_token.id);
-    let store: StoreSchemaWithId = await getStore(store_id);
+//     let user: UserSchemaWithId = await getUser(auth_token.id);
+//     let store: StoreSchemaWithId = await getStore(store_id);
 
-    checkUserWorkAtStore(user, store._id);
+//     checkUserWorkAtStore(user, store._id);
 
-    const response = new ResponseData(
-      true,
-      200,
-      "Add store employee successfully!!",
-      "metadata"
-    );
-    return res.status(200).json(response);
-  } catch (error: any) {
-    next(error);
-  }
-};
+//     const response = new ResponseData(
+//       true,
+//       200,
+//       "Add store employee successfully!!",
+//       "metadata"
+//     );
+//     return res.status(200).json(response);
+//   } catch (error: any) {
+//     next(error);
+//   }
+// };
 
 export const getStoreById = async (
   req: Request,
@@ -241,6 +264,11 @@ export const getStoreById = async (
     });
 
     checkUserWorkAtStore(user, store._id);
+
+    if (store.logo) {
+      const logo: ImageSchemaWithId = await getImage(store.logo.toString());
+      store.logo = logo.full_path;
+    }
 
     const {
       created,
@@ -287,6 +315,12 @@ export const getStoreByUserId = async (
           throw new RequestError(404, "Not Found!!!", "Store not found");
         return value;
       });
+
+      if (store.logo) {
+        const logo: ImageSchemaWithId = await getImage(store.logo.toString());
+        store.logo = logo.full_path;
+      }
+
       stores.push(store);
     }
 
@@ -365,68 +399,6 @@ export const getStoreOwner = async (
   }
 };
 
-export const getStoreLogo = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const store_data: StoreLogoSchema = await StoreLogoSchema.parseAsync(
-      req.body
-    );
-    const store_id = req.params.id;
-    const { auth_token } = req.body;
-
-    checkForIdMismatch(auth_token.id, cookies.id);
-
-    let user: UserSchemaWithId = await getUser(auth_token.id);
-    let store: StoreSchemaWithId = await getStore(store_id);
-    let image: ImageSchemaWithId = await getImage(store_data.image_id);
-
-    const store_employees_mapping = store.employees.map((value) =>
-      value.user.toString()
-    );
-    store_employees_mapping.push(store.owner.toString());
-
-    checkUserWorkAtStore(user, store._id);
-
-    if (!store_employees_mapping.includes(image.owner.toString()))
-      throw new RequestError(
-        403,
-        "Forbidden!!!",
-        "You do not have access rights to this image"
-      );
-    if (store.logo.toString() !== image._id.toString())
-      throw new RequestError(
-        400,
-        "Bad Request!!!",
-        "Mismatch between `store_logo_id` and `image_id`"
-      );
-
-    res.sendFile(
-      image.name,
-      {
-        root: path.resolve("public/images"),
-        dotfiles: "deny",
-      },
-      (err) => {
-        if (err && err.name === "NotFoundError")
-          err = new RequestError(
-            404,
-            `${err.message}!!!`,
-            "Image path not found"
-          );
-
-        next(err);
-      }
-    );
-    return res.status(200);
-  } catch (error: any) {
-    next(error);
-  }
-};
-
 export const patchStore = async (
   req: Request,
   res: Response,
@@ -454,11 +426,11 @@ export const patchStore = async (
       { _id: store._id },
       {
         $set: {
-          name: store_data.name ?? store.name,
-          address: store_data.address ?? store.address,
-          phone_number: store_data.phone_number ?? store.phone_number,
-          email: email ?? "",
-          type: store_data.type ?? store.type,
+          name: store_data.name || store.name,
+          address: store_data.address || store.address,
+          phone_number: store_data.phone_number || store.phone_number,
+          email: email || "",
+          type: store_data.type || store.type,
           updated: editor,
         },
       },
@@ -489,33 +461,38 @@ export const patchStore = async (
   }
 };
 
-export const deleteStoreLogo = async (
+export const patchStoreLogo = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const store_data: StoreLogoSchema = await StoreLogoSchema.parseAsync(
-      req.body
-    );
     const store_id = req.params.id;
+    const file = req.file;
     const { auth_token } = req.body;
 
+    if (!file) throw new RequestError(404, "Not Found!!!", "File not found");
+
     checkForIdMismatch(auth_token.id, cookies.id);
+    checkFileType(file);
 
     let user: UserSchemaWithId = await getUser(auth_token.id);
     let store: StoreSchemaWithId = await getStore(store_id);
-    let image: ImageSchemaWithId = await getImage(store_data.image_id);
 
-    const store_employees_mapping = store.employees.map((value) =>
-      value.user.toString()
+    if (!store.logo)
+      throw new RequestError(404, "Not Found!!!", "Store logo not found");
+
+    let image: ImageSchemaWithId = await getImage(store.logo.toString());
+
+    const store_employees_mapping: Array<string> = store.employees.map(
+      (value) => value.user.toString()
     );
     store_employees_mapping.push(store.owner.toString());
 
     checkUserWorkAtStore(user, store._id);
 
-    if (!store_employees_mapping.includes(image.owner.toString()))
+    if (!store_employees_mapping.includes(image.owner_id.toString()))
       throw new RequestError(
         403,
         "Forbidden!!!",
@@ -525,20 +502,41 @@ export const deleteStoreLogo = async (
       throw new RequestError(
         400,
         "Bad Request!!!",
-        "Mismatch between `store_logo_id` and `image_id`"
+        "Mismatch between `product_image_id` and `image_id`"
       );
 
+    const r2_data = await postR2Image(file, store_id.toString());
+
+    if (!r2_data)
+      throw new RequestError(
+        500,
+        "Internal Server Error!!!",
+        "Failed to upload image to Cloudflare R2"
+      );
+
+    await deleteR2Image(image.name.split(".")[0]);
+
+    const new_image = await ImageSchema.parseAsync({
+      path: file.path,
+      full_path: `${r2_endpoint}${file.filename.split(".")[0]}`,
+      name: file.filename,
+      size: file.size,
+      mimetype: file.mimetype,
+      e_tag: r2_data.ETag,
+      version_id: r2_data.VersionId,
+      owner_id: user._id,
+    });
     const editor: EditorSchema = await createEditor(user._id.toString());
 
-    fs.removeSync(image.path);
-    await Image.deleteOne({ _id: image._id }).then(async (value) => {
-      if (!value.acknowledged && value.deletedCount === 0) throw new Error();
+    await Image.deleteOne({ _id: image._id });
+    await Image.insertOne(new_image).then(async (value) => {
+      if (!value.acknowledged) throw new Error();
 
       store = await Store.findOneAndUpdate(
         { _id: store._id },
         {
           $set: {
-            logo: "",
+            logo: value.insertedId,
             updated: editor,
           },
         },
@@ -550,17 +548,99 @@ export const deleteStoreLogo = async (
       });
     });
 
+    const {
+      created,
+      updated,
+      activities,
+      transactions,
+      payment_methods,
+      ...metadata
+    } = store;
     const response = new ResponseData(
       true,
       200,
-      "Delete store image successfully!!",
-      {}
+      "Patch product image successfully!!",
+      metadata
     );
     return res.status(200).json(response);
   } catch (error: any) {
+    await deleteR2Image(req.file?.filename.split(".")[0]);
     next(error);
   }
 };
+
+// export const deleteStoreLogo = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
+//     const store_data: StoreLogoSchema = await StoreLogoSchema.parseAsync(
+//       req.body
+//     );
+//     const store_id = req.params.id;
+//     const { auth_token } = req.body;
+
+//     checkForIdMismatch(auth_token.id, cookies.id);
+
+//     let user: UserSchemaWithId = await getUser(auth_token.id);
+//     let store: StoreSchemaWithId = await getStore(store_id);
+//     let image: ImageSchemaWithId = await getImage(store_data.image_id);
+
+//     const store_employees_mapping = store.employees.map((value) =>
+//       value.user.toString()
+//     );
+//     store_employees_mapping.push(store.owner.toString());
+
+//     checkUserWorkAtStore(user, store._id);
+
+//     if (!store_employees_mapping.includes(image.owner.toString()))
+//       throw new RequestError(
+//         403,
+//         "Forbidden!!!",
+//         "You do not have access rights to this image"
+//       );
+//     if (store.logo.toString() !== image._id.toString())
+//       throw new RequestError(
+//         400,
+//         "Bad Request!!!",
+//         "Mismatch between `store_logo_id` and `image_id`"
+//       );
+
+//     const editor: EditorSchema = await createEditor(user._id.toString());
+
+//     fs.removeSync(image.path);
+//     await Image.deleteOne({ _id: image._id }).then(async (value) => {
+//       if (!value.acknowledged && value.deletedCount === 0) throw new Error();
+
+//       store = await Store.findOneAndUpdate(
+//         { _id: store._id },
+//         {
+//           $set: {
+//             logo: "",
+//             updated: editor,
+//           },
+//         },
+//         { returnDocument: "after" }
+//       ).then((value) => {
+//         if (value === null)
+//           throw new RequestError(404, "Not Found!!!", "Store not found");
+//         return value;
+//       });
+//     });
+
+//     const response = new ResponseData(
+//       true,
+//       200,
+//       "Delete store image successfully!!",
+//       {}
+//     );
+//     return res.status(200).json(response);
+//   } catch (error: any) {
+//     next(error);
+//   }
+// };
 
 export const deleteStore = async (
   req: Request,

@@ -4,18 +4,16 @@ import {
   CreateStoreSchema,
   GetStoreSchemaByUserId,
   PatchStoreSchema,
-  StoreLogoSchema,
 } from "./storeModel";
 import {
   addStoreLogo,
   createStore,
   deleteStore,
-  deleteStoreLogo,
   getStoreById,
   getStoreByUserId,
-  getStoreLogo,
   getStoreOwner,
   patchStore,
+  patchStoreLogo,
 } from "./storeController";
 import upload from "../../middleware/imageMiddleware";
 import ParamsWithId from "../../utils/params/paramsModel";
@@ -33,7 +31,7 @@ router.post(
 );
 
 router.post(
-  "/:id/logos",
+  "/:id/logo",
   upload.single("image"),
   requestValidation({
     params: ParamsWithId,
@@ -77,16 +75,6 @@ router.get(
   getStoreOwner
 );
 
-router.get(
-  "/:id/logos",
-  requestValidation({
-    params: ParamsWithId,
-    body: StoreLogoSchema,
-  }),
-  verifyToken(),
-  getStoreLogo
-);
-
 router.patch(
   "/:id",
   requestValidation({
@@ -97,14 +85,14 @@ router.patch(
   patchStore
 );
 
-router.delete(
-  "/:id/logos",
+router.patch(
+  "/:id/logo",
+  upload.single("image"),
   requestValidation({
     params: ParamsWithId,
-    body: StoreLogoSchema,
   }),
   verifyToken(),
-  deleteStoreLogo
+  patchStoreLogo
 );
 
 router.delete(

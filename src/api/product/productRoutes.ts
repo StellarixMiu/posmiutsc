@@ -6,7 +6,6 @@ import {
   GetProductSchemaByStoreId,
   PatchProductSchema,
   PatchStockProductSchema,
-  ProductImage,
 } from "./productModel";
 import {
   createProduct,
@@ -15,10 +14,9 @@ import {
   getProductBySlug,
   patchProduct,
   addProductImage,
-  getProductImage,
-  deleteProductImage,
   deleteProduct,
   patchProductStock,
+  patchProductImage,
 } from "./productController";
 import upload from "../../middleware/imageMiddleware";
 import ParamsWithId from "../../utils/params/paramsModel";
@@ -75,16 +73,6 @@ router.get(
   getProductBySlug
 );
 
-router.get(
-  "/:id/images",
-  requestValidation({
-    params: ParamsWithId,
-    body: ProductImage,
-  }),
-  verifyToken(),
-  getProductImage
-);
-
 router.patch(
   "/:id",
   requestValidation({
@@ -96,6 +84,17 @@ router.patch(
 );
 
 router.patch(
+  "/:id/images",
+  upload.single("image"),
+  requestValidation({
+    params: ParamsWithId,
+    body: BodyWithStoreId,
+  }),
+  verifyToken(),
+  patchProductImage
+);
+
+router.patch(
   "/:id/stocks/",
   requestValidation({
     params: ParamsWithId,
@@ -103,16 +102,6 @@ router.patch(
   }),
   verifyToken(),
   patchProductStock
-);
-
-router.delete(
-  "/:id/images",
-  requestValidation({
-    params: ParamsWithId,
-    body: ProductImage,
-  }),
-  verifyToken(),
-  deleteProductImage
 );
 
 router.delete(

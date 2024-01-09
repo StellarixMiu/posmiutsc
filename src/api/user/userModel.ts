@@ -75,11 +75,7 @@ const PatchUserSchema = UserSchema.pick({
   name: true,
   email: true,
   phone_number: true,
-  image: true,
-}).partial({
-  phone_number: true,
-  image: true,
-});
+}).partial();
 
 type UserSchema = z.infer<typeof UserSchema>;
 type SignupUserSchema = z.infer<typeof SignupUserSchema>;

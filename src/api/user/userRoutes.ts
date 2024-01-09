@@ -2,16 +2,28 @@ import { Router } from "express";
 import { verifyToken } from "../../middleware/tokenMiddleware";
 import { PatchUserSchema } from "./userModel";
 import {
+  addUserImage,
   deleteUserById,
-  getUserByToken,
   getUserById,
   patchUserById,
+  patchUserImage,
   requestAccess,
 } from "./userController";
+import upload from "../../middleware/imageMiddleware";
 import ParamsWithId from "../../utils/params/paramsModel";
 import requestValidation from "../../middleware/validationMiddleware";
 
 const router = Router();
+
+router.post(
+  "/:id/image",
+  upload.single("image"),
+  requestValidation({
+    params: ParamsWithId,
+  }),
+  verifyToken(),
+  addUserImage
+);
 
 router.get(
   "/:id/token",
@@ -20,8 +32,6 @@ router.get(
   }),
   requestAccess
 );
-
-router.get("/", verifyToken(), getUserByToken);
 
 router.get(
   "/:id",
@@ -32,15 +42,25 @@ router.get(
   getUserById
 );
 
-// router.patch(
-//   "/:id",
-//   requestValidation({
-//     params: ParamsWithId,
-//     body: PatchUserSchema,
-//   }),
-//   verifyToken(),
-//   patchUserById
-// );
+router.patch(
+  "/:id",
+  requestValidation({
+    params: ParamsWithId,
+    body: PatchUserSchema,
+  }),
+  verifyToken(),
+  patchUserById
+);
+
+router.patch(
+  "/:id/image",
+  upload.single("image"),
+  requestValidation({
+    params: ParamsWithId,
+  }),
+  verifyToken(),
+  patchUserImage
+);
 
 // TODO
 // router.patch(

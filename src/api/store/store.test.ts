@@ -1,12 +1,13 @@
-import * as fs from "fs-extra";
 import supertest from "supertest";
 import { ObjectId } from "mongodb";
-import { Image } from "../../utils/image/imageModel";
+import { deleteR2Image } from "../../utils/image/imageController";
+import { Image, ImageSchemaWithId } from "../../utils/image/imageModel";
 import { Store, StoreSchemaWithId } from "./storeModel";
 import app from "../../app";
 import createTest from "../../test/createTest";
 
 let store: StoreSchemaWithId;
+let image_id: string;
 
 let user: any;
 
@@ -18,7 +19,6 @@ let lost_store: any;
 
 const invalid_params = "xsH9yCllOpLaQHPu4UoQjY24";
 const invalid_bearer = "Bearer 6510f40adeb51c904347309d";
-const invalid_image_id = "ro6tGCx14yQdBiCX64pyCktT";
 
 beforeAll(async () => {
   const users = await createTest();
@@ -29,6 +29,15 @@ beforeAll(async () => {
 
   lost_user = users[2];
   lost_store = lost_user.store;
+});
+
+afterAll(async () => {
+  const image: ImageSchemaWithId | null = await Image.findOne({
+    _id: new ObjectId(image_id),
+  });
+  if (image?._id.toString().length !== 0) {
+    await deleteR2Image(image?.name.split(".")[0]);
+  }
 });
 
 describe("POST: `/api/stores/`", () => {
@@ -273,14 +282,15 @@ describe("POST: `/api/stores/`", () => {
   });
 });
 
-describe("POST: `/api/stores/:id/logos`", () => {
+describe("POST: `/api/stores/:id/logo`", () => {
   it("Should return 200 (successfully)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
       .set("Content-Type", "multipart/form-data")
       .attach("image", "src/test/images/0.jpg");
+    image_id = body.data.logo;
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -311,7 +321,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
   describe("wrong data type", () => {
     it("Should return 422 (wrong params type)", async () => {
       const { status, body } = await supertest(app)
-        .post(`/api/stores/${invalid_params}/logos`)
+        .post(`/api/stores/${invalid_params}/logo`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
         .set("Content-Type", "multipart/form-data")
@@ -328,7 +338,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
     it("Should return 422 (wrong file type)", async () => {
       const { status, body } = await supertest(app)
-        .post(`/api/stores/${store._id.toString()}/logos`)
+        .post(`/api/stores/${store._id.toString()}/logo`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
         .set("Content-Type", "multipart/form-data")
@@ -342,11 +352,13 @@ describe("POST: `/api/stores/:id/logos`", () => {
         success: false,
       });
     });
+
+    it.todo("Should return 422 (file to big)");
   });
 
   it("Should return 401 (different auth id)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Authorization", second_user.bearer_token)
       .set("Content-Type", "multipart/form-data")
@@ -363,7 +375,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
   it("Should return 401 (no cookies)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.bearer_token)
       .set("Content-Type", "multipart/form-data")
       .attach("image", "src/test/images/0.jpg");
@@ -379,7 +391,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
   it("Should return 401 (no auth header)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Content-Type", "multipart/form-data")
       .attach("image", "src/test/images/0.jpg");
@@ -395,7 +407,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
   it("Should return 403 (invalid auth header)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
       .set("Content-Type", "multipart/form-data")
@@ -412,7 +424,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
   it("Should return 403 (no access store)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", second_user.bearer_token)
       .set("Content-Type", "multipart/form-data")
@@ -429,7 +441,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
   it("Should return 400 (Store already has an logo)", async () => {
     const { status, body } = await supertest(app)
-      .post(`/api/stores/${store._id.toString()}/logos`)
+      .post(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
       .set("Content-Type", "multipart/form-data")
@@ -437,17 +449,19 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
     expect(status).toBe(400);
     expect(body).toEqual({
-      data: "Store already has an logo",
+      data: "Store already has a logo",
       message: "Bad Request!!!",
       status: 400,
       success: false,
     });
   });
 
+  it.skip("Should return 500 ('Failed to upload image to Cloudflare R2')", () => {});
+
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
       const { status, body } = await supertest(app)
-        .post(`/api/stores/${store._id.toString()}/logos`)
+        .post(`/api/stores/${store._id.toString()}/logo`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
         .set("Content-Type", "multipart/form-data")
@@ -464,7 +478,7 @@ describe("POST: `/api/stores/:id/logos`", () => {
 
     it("Should return 404 ('Store' not found)", async () => {
       const { status, body } = await supertest(app)
-        .post(`/api/stores/${lost_store._id.toString()}/logos`)
+        .post(`/api/stores/${lost_store._id.toString()}/logo`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
         .set("Content-Type", "multipart/form-data")
@@ -604,6 +618,8 @@ describe("GET: `/api/stores/:id", () => {
       success: false,
     });
   });
+
+  it.skip("Should return 500 ('Failed to upload image to Cloudflare R2')", () => {});
 
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
@@ -957,274 +973,6 @@ describe("GET: `/api/stores/:id/owner`", () => {
   });
 });
 
-describe("GET: `/api/stores/:id/logos`", () => {
-  it("Should return 200 (successfully)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(200);
-    expect(body).not.toEqual({
-      data: expect.anything(),
-      message: expect.any(String),
-      status: expect.any(Number),
-      success: expect.any(Boolean),
-    });
-  });
-
-  describe("wrong data type", () => {
-    it("Should return 422 (wrong params type)", async () => {
-      const payload = {
-        image_id: store.logo.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/${invalid_params}/logos`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'image_id' type)", async () => {
-      const payload = {
-        image_id: invalid_image_id,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/${store._id.toString()}/logos`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-  });
-
-  it("Should return 401 (different auth id)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Mismatch between `auth_id` and `cookies_id`",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 401 (no cookies)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Request cookies not defined",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 401 (no auth header)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", user.cookies)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Authorization header is needed",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (invalid auth header)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", invalid_bearer)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "Invalid token at authorization header",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (no access store)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", second_user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "You do not have access rights to this store",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 400 (different image id)", async () => {
-    const sec = await supertest(app)
-      .post(`/api/stores/${user.store._id.toString()}/logos`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .set("Content-Type", "multipart/form-data")
-      .attach("image", "src/test/images/0.jpg")
-      .then(async ({ body }) => {
-        return body.data;
-      });
-    user.store = sec;
-    await Image.findOne({ _id: new ObjectId(sec.logo) }).then((value) => {
-      if (value) {
-        fs.removeSync(value.path);
-      }
-      return value;
-    });
-
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(400);
-    expect(body).toEqual({
-      data: "Mismatch between `store_logo_id` and `image_id`",
-      message: "Bad Request!!!",
-      status: 400,
-      success: false,
-    });
-  });
-
-  describe("'SOMETHING' not found", () => {
-    it("Should return 404 ('User' not found)", async () => {
-      const payload = {
-        image_id: store.logo.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/${store._id.toString()}/logos`)
-        .set("Cookie", lost_user.cookies)
-        .set("Authorization", lost_user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "User not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Store' not found)", async () => {
-      const payload = {
-        image_id: store.logo.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/${lost_store._id.toString()}/logos`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Store not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Image' not found)", async () => {
-      const payload = {
-        image_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/${store._id.toString()}/logos`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Image not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Image' path not found)", async () => {
-      const payload = {
-        image_id: user.store.logo.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/${user.store._id.toString()}/logos`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Image path not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-  });
-});
-
 describe("PATCH: `/api/stores/:id`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
@@ -1533,36 +1281,57 @@ describe("PATCH: `/api/stores/:id`", () => {
   });
 });
 
-describe("DELETE: `/api/stores/:id/logos`", () => {
+describe("PATCH: `/api/stores/:id/logo`", () => {
   it("Should return 200 (successfully)", async () => {
-    const payload = {
-      image_id: store.logo.toString(),
-    };
     const { status, body } = await supertest(app)
-      .delete(`/api/stores/${store._id.toString()}/logos`)
+      .patch(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg");
 
     expect(status).toBe(200);
     expect(body).toEqual({
-      data: {},
-      message: "Delete store image successfully!!",
+      data: {
+        _id: expect.any(String),
+        address: "Jl Dinoyo 40, Jawa Timur",
+        categories: [],
+        coupons: [],
+        customers: [],
+        email: "sgroceries2@gmail.com",
+        employees: [],
+        invoice: {
+          isEnable: true,
+        },
+        logo: expect.any(String),
+        name: "sgroceries",
+        owner: expect.any(String),
+        phone_number: "6285102795413",
+        products: [],
+        type: "grocery",
+        website: "",
+      },
+      message: "Patch store logo successfully!!",
       status: 200,
       success: true,
     });
+
+    const image: ImageSchemaWithId | null = await Image.findOne({
+      _id: new ObjectId(body.data.logo),
+    });
+    if (image?._id.toString().length !== 0) {
+      await deleteR2Image(image?.name.split(".")[0]);
+    }
   });
 
   describe("wrong data type", () => {
     it("Should return 422 (wrong params type)", async () => {
-      const payload = {
-        image_id: user.store.logo.toString(),
-      };
       const { status, body } = await supertest(app)
-        .delete(`/api/stores/${invalid_params}/logos`)
+        .patch(`/api/stores/${invalid_params}/logo`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg");
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -1573,35 +1342,33 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
       });
     });
 
-    it("Should return 422 (wrong 'image_id' type)", async () => {
-      const payload = {
-        image_id: invalid_image_id,
-      };
+    it("Should return 422 (wrong file type)", async () => {
       const { status, body } = await supertest(app)
-        .delete(`/api/stores/${user.store._id.toString()}/logos`)
+        .patch(`/api/stores/${store._id.toString()}/logo`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/test.txt");
 
       expect(status).toBe(422);
       expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
+        data: "Only an images are allowed",
+        message: "Unprocessable Entity!!!",
         status: 422,
         success: false,
       });
     });
+
+    it.todo("Should return 422 (file to big)");
   });
 
   it("Should return 401 (different auth id)", async () => {
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
     const { status, body } = await supertest(app)
-      .delete(`/api/stores/${user.store._id.toString()}/logos`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
+      .patch(`/api/stores/${store._id.toString()}/logo`)
+      .set("Cookie", user.cookies)
+      .set("Authorization", second_user.bearer_token)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg");
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -1613,17 +1380,15 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
   });
 
   it("Should return 401 (no cookies)", async () => {
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
     const { status, body } = await supertest(app)
-      .delete(`/api/stores/${user.store._id.toString()}/logos`)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
+      .patch(`/api/stores/${store._id.toString()}/logo`)
+      .set("Cookie", user.bearer_token)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg");
 
     expect(status).toBe(401);
     expect(body).toEqual({
-      data: "Request cookies not defined",
+      data: "Authorization header is needed",
       message: "Unauthorized!!!",
       status: 401,
       success: false,
@@ -1631,13 +1396,11 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
   });
 
   it("Should return 401 (no auth header)", async () => {
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
     const { status, body } = await supertest(app)
-      .delete(`/api/stores/${user.store._id.toString()}/logos`)
+      .patch(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg");
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -1649,14 +1412,12 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
   });
 
   it("Should return 403 (invalid auth header)", async () => {
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
     const { status, body } = await supertest(app)
-      .delete(`/api/stores/${user.store._id.toString()}/logos`)
+      .patch(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg");
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -1668,14 +1429,12 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
   });
 
   it("Should return 403 (no access store)", async () => {
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
     const { status, body } = await supertest(app)
-      .delete(`/api/stores/${user.store._id.toString()}/logos`)
+      .patch(`/api/stores/${store._id.toString()}/logo`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg");
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -1686,35 +1445,16 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
     });
   });
 
-  it("Should return 400 (different image id)", async () => {
-    const payload = {
-      image_id: user.store.logo.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/stores/${store._id.toString()}/logos`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(400);
-    expect(body).toEqual({
-      data: "Mismatch between `store_logo_id` and `image_id`",
-      message: "Bad Request!!!",
-      status: 400,
-      success: false,
-    });
-  });
+  it.skip("Should return 500 ('Failed to upload image to Cloudflare R2')", () => {});
 
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
-      const payload = {
-        image_id: user.store.logo.toString(),
-      };
       const { status, body } = await supertest(app)
-        .delete(`/api/stores/${user.store._id.toString()}/logos`)
+        .patch(`/api/stores/${store._id.toString()}/logo`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg");
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -1726,14 +1466,12 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
     });
 
     it("Should return 404 ('Store' not found)", async () => {
-      const payload = {
-        image_id: user.store.logo.toString(),
-      };
       const { status, body } = await supertest(app)
-        .delete(`/api/stores/${lost_store._id.toString()}/logos`)
+        .patch(`/api/stores/${lost_store._id.toString()}/logo`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg");
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -1744,19 +1482,17 @@ describe("DELETE: `/api/stores/:id/logos`", () => {
       });
     });
 
-    it("Should return 404 ('Image' not found)", async () => {
-      const payload = {
-        image_id: store._id.toString(),
-      };
+    it("Should return 400 ('Store logo' not found)", async () => {
       const { status, body } = await supertest(app)
-        .delete(`/api/stores/${user.store._id.toString()}/logos`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
+        .patch(`/api/stores/${second_store._id.toString()}/logo`)
+        .set("Cookie", second_user.cookies)
+        .set("Authorization", second_user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg");
 
       expect(status).toBe(404);
       expect(body).toEqual({
-        data: "Image not found",
+        data: "Store logo not found",
         message: "Not Found!!!",
         status: 404,
         success: false,

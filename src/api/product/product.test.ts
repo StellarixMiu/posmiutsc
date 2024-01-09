@@ -62,10 +62,7 @@ describe("POST: `/api/products/`", () => {
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
-<<<<<<< HEAD
         base_price: 49999,
-=======
->>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
         description: "",
         dimensions: {
           height: 0,
@@ -421,10 +418,7 @@ describe("POST: `/api/products/:id/images`", () => {
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
-<<<<<<< HEAD
         base_price: 49999,
-=======
->>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
         description: "",
         dimensions: {
           height: 0,
@@ -747,10 +741,7 @@ describe("GET: `/api/products/:id`", () => {
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
-<<<<<<< HEAD
         base_price: 49999,
-=======
->>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
         description: "",
         dimensions: {
           height: 0,
@@ -1045,10 +1036,7 @@ describe("GET: `/api/products/store/:id`", () => {
         },
         {
           _id: expect.any(String),
-<<<<<<< HEAD
           base_price: 49999,
-=======
->>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
           description: "",
           dimensions: {
             height: 0,

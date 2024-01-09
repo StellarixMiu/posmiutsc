@@ -71,8 +71,10 @@ export const createProduct = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const product_data: CreateProductSchema =
+    const req_product: CreateProductSchema =
       await CreateProductSchema.parseAsync(req.body);
+    const { sku, upc, description, base_price, weight, ...product_data } =
+      req_product;
     const { auth_token } = req.body;
 
     checkForIdMismatch(auth_token.id, cookies.id);
@@ -87,6 +89,10 @@ export const createProduct = async (
     let product: ProductSchema | ProductSchemaWithId =
       await ProductSchema.parseAsync({
         ...product_data,
+        sku: sku || "",
+        upc: upc || "",
+        description: description || "",
+        base_price: base_price || product_data.price,
         slug: product_data.name.split(" ").join("-"),
         created: editor,
         updated: editor,
@@ -390,28 +396,21 @@ export const patchProduct = async (
     checkStoreHasProduct(product, store);
 
     const editor: EditorSchema = await createEditor(user._id.toString());
-    const description = update_data.description
-      ? update_data.description
-      : product.description;
 
     product = await Product.findOneAndUpdate(
       { _id: product._id },
       {
         $set: {
-          slug: update_data.slug ?? product.slug,
-          name: update_data.name ?? product.name,
-          price: update_data.price ?? product.price,
-          isFavorite: update_data.isFavorite ?? product.isFavorite,
-          weight: update_data.weight ?? product.weight,
-          description: description ?? "",
-          "dimensions.width":
-            update_data.dimensions?.width ?? product.dimensions.width,
-          "dimensions.height":
-            update_data.dimensions?.height ?? product.dimensions.height,
-          "dimensions.length":
-            update_data.dimensions?.length ?? product.dimensions.length,
-          "dimensions.unit":
-            update_data.dimensions?.unit ?? product.dimensions.unit,
+          slug: update_data.slug || product.slug,
+          name: update_data.name || product.name,
+          price: update_data.price || product.price,
+          isFavorite: update_data.isFavorite || product.isFavorite,
+          weight: update_data.weight || product.weight,
+          description: update_data.description || product.description,
+          base_price: update_data.base_price || product.base_price,
+          sku: update_data.sku || product.sku,
+          upc: update_data.upc || product.upc,
+          dimensions: update_data.dimensions || product.dimensions,
           updated: editor,
         },
       },

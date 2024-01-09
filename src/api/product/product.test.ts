@@ -1,12 +1,13 @@
-import * as fs from "fs-extra";
 import supertest from "supertest";
 import { ObjectId } from "mongodb";
-import { Image } from "../../utils/image/imageModel";
+import { deleteR2Image } from "../../utils/image/imageController";
+import { Image, ImageSchemaWithId } from "../../utils/image/imageModel";
 import { Product, ProductSchemaWithId } from "./productModel";
 import app from "../../app";
 import createTest from "../../test/createTest";
 
 let product: ProductSchemaWithId;
+let image_id: string;
 
 let user: any;
 let store: any;
@@ -33,6 +34,15 @@ beforeAll(async () => {
   lost_store = lost_user.store;
 });
 
+afterAll(async () => {
+  const image: ImageSchemaWithId | null = await Image.findOne({
+    _id: new ObjectId(image_id),
+  });
+  if (image?._id.toString().length !== 0) {
+    await deleteR2Image(image?.name.split(".")[0]);
+  }
+});
+
 describe("POST: `/api/products/`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
@@ -52,7 +62,10 @@ describe("POST: `/api/products/`", () => {
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
+<<<<<<< HEAD
         base_price: 49999,
+=======
+>>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
         description: "",
         dimensions: {
           height: 0,
@@ -402,12 +415,16 @@ describe("POST: `/api/products/:id/images`", () => {
       .set("Content-Type", "multipart/form-data")
       .attach("image", "src/test/images/0.jpg")
       .field(payload);
+    image_id = body.data.image;
 
     expect(status).toBe(200);
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
+<<<<<<< HEAD
         base_price: 49999,
+=======
+>>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
         description: "",
         dimensions: {
           height: 0,
@@ -497,6 +514,8 @@ describe("POST: `/api/products/:id/images`", () => {
         success: false,
       });
     });
+
+    it.todo("Should return 422 (file to big)");
   });
 
   it("Should return 401 (different auth id)", async () => {
@@ -623,6 +642,8 @@ describe("POST: `/api/products/:id/images`", () => {
     });
   });
 
+  it.skip("Should return 500 ('Failed to upload image to Cloudflare R2')", () => {});
+
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
       const payload = {
@@ -726,7 +747,10 @@ describe("GET: `/api/products/:id`", () => {
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
+<<<<<<< HEAD
         base_price: 49999,
+=======
+>>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
         description: "",
         dimensions: {
           height: 0,
@@ -1021,7 +1045,10 @@ describe("GET: `/api/products/store/:id`", () => {
         },
         {
           _id: expect.any(String),
+<<<<<<< HEAD
           base_price: 49999,
+=======
+>>>>>>> d90150545abd001e48b371616bad7fd4b7b4e717
           description: "",
           dimensions: {
             height: 0,
@@ -1279,35 +1306,7 @@ describe("GET: `/api/products/:slug`", () => {
     });
   });
 
-  it("Should return 401 (no cookies)", async () => {
-    const { status, body } = await supertest(app).get(
-      `/api/products/slug/${product.slug}`
-    );
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Request cookies not defined",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
   describe("'SOMETHING' not found", () => {
-    it("Should return 404 ('User' not found)", async () => {
-      const { status, body } = await supertest(app)
-        .get(`/api/products/slug/${product.slug}`)
-        .set("Cookie", lost_user.cookies);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "User not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
     it("Should return 404 ('Product' not found)", async () => {
       const { status, body } = await supertest(app)
         .get(`/api/products/slug/${lost_user.product.slug}`)
@@ -1316,410 +1315,6 @@ describe("GET: `/api/products/:slug`", () => {
       expect(status).toBe(404);
       expect(body).toEqual({
         data: "Product not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-  });
-});
-
-describe("GET: `/api/products/:id/images`", () => {
-  it("Should return 200 (successfully)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(200);
-    expect(body).not.toEqual({
-      data: expect.anything(),
-      message: expect.any(String),
-      status: expect.any(Number),
-      success: expect.any(Boolean),
-    });
-  });
-
-  describe("wrong data type", () => {
-    it("Should return 422 (wrong params type)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${invalid_params}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong data type)", async () => {
-      const payload = {
-        image_id: "H10e26lbE8eb2T2zpp1T0VaH",
-        store_id: invalid_store_id,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'image_id' type)", async () => {
-      const payload = {
-        image_id: "H10e26lbE8eb2T2zpp1T0VaH",
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'store_id' type)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: invalid_params,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-  });
-
-  it("Should return 401 (different auth id)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Mismatch between `auth_id` and `cookies_id`",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 401 (no cookies)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Request cookies not defined",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 401 (no auth header)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Authorization header is needed",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (invalid auth header)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", invalid_bearer)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "Invalid token at authorization header",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (no access store)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", second_user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "You do not have access rights to this store",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (no access image)", async () => {
-    const sec = await supertest(app)
-      .post(`/api/products/${second_user.product._id.toString()}/images`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", second_user.bearer_token)
-      .set("Content-Type", "multipart/form-data")
-      .attach("image", "src/test/images/0.jpg")
-      .field({
-        store_id: second_store._id.toString(),
-      })
-      .then(async ({ body }) => {
-        return body.data;
-      });
-    second_user.product.image = sec.image;
-    await Image.findOne({ _id: new ObjectId(sec.image) }).then((value) => {
-      if (value) {
-        fs.removeSync(value.path);
-      }
-      return value;
-    });
-
-    const payload = {
-      image_id: second_user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "You do not have access rights to this image",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 409 (different product image)", async () => {
-    const sec = await supertest(app)
-      .post(`/api/products/${user.product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .set("Content-Type", "multipart/form-data")
-      .attach("image", "src/test/images/0.jpg")
-      .field({
-        store_id: store._id.toString(),
-      })
-      .then(async ({ body }) => {
-        return body.data;
-      });
-    user.product.image = sec.image;
-    await Image.findOne({ _id: new ObjectId(sec.image) }).then((value) => {
-      if (value) {
-        fs.removeSync(value.path);
-      }
-      return value;
-    });
-
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .get(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(400);
-    expect(body).toEqual({
-      data: "Mismatch between `product_image_id` and `image_id`",
-      message: "Bad Request!!!",
-      status: 400,
-      success: false,
-    });
-  });
-
-  describe("'SOMETHING' not found", () => {
-    it("Should return 404 ('User' not found)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", lost_user.cookies)
-        .set("Authorization", lost_user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "User not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Store' not found)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: lost_store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Store not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Product' not found)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${lost_user.product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Product not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Image' not found)", async () => {
-      const payload = {
-        image_id: lost_store._id.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Image not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Product' not found in the store)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${second_user.product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Product not available in the store",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Image' path not found)", async () => {
-      const payload = {
-        image_id: user.product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/${user.product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Image path not found",
         message: "Not Found!!!",
         status: 404,
         success: false,
@@ -2172,6 +1767,331 @@ describe("PATCH: `/api/products/:id`", () => {
   });
 });
 
+describe("PATCH: `/api/products/:id/images`", () => {
+  it("Should return 200 (successfully)", async () => {
+    const payload = {
+      store_id: store._id.toString(),
+    };
+    const { status, body } = await supertest(app)
+      .patch(`/api/products/${product._id.toString()}/images`)
+      .set("Cookie", user.cookies)
+      .set("Authorization", user.bearer_token)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg")
+      .field(payload);
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      data: {
+        _id: expect.any(String),
+        description: "",
+        dimensions: {
+          height: 0,
+          length: 0,
+          unit: "CM",
+          width: 0,
+        },
+        image: expect.any(String),
+        isFavorite: true,
+        name: "pepperoni",
+        price: 45000,
+        slug: "Pepperoni",
+        stock: 10,
+        weight: 0,
+      },
+      message: "Patch product image successfully!!",
+      status: 200,
+      success: true,
+    });
+
+    const image: ImageSchemaWithId | null = await Image.findOne({
+      _id: new ObjectId(body.data.image),
+    });
+    if (image?._id.toString().length !== 0) {
+      await deleteR2Image(image?.name.split(".")[0]);
+    }
+  });
+
+  describe("wrong data type", () => {
+    it("Should return 422 (wrong params type)", async () => {
+      const payload = {
+        store_id: store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${invalid_params}/images`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: expect.any(Array),
+        message: "ZodError!!!",
+        status: 422,
+        success: false,
+      });
+    });
+
+    it("Should return 422 (wrong 'store_id' type)", async () => {
+      const payload = {
+        store_id: invalid_store_id,
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${product._id.toString()}/images`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: expect.any(Array),
+        message: "ZodError!!!",
+        status: 422,
+        success: false,
+      });
+    });
+
+    it("Should return 422 (wrong file type)", async () => {
+      const payload = {
+        store_id: store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${product._id.toString()}/images`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/test.txt")
+        .field(payload);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: "Only an images are allowed",
+        message: "Unprocessable Entity!!!",
+        status: 422,
+        success: false,
+      });
+    });
+
+    it.todo("Should return 422 (file to big)");
+  });
+
+  it("Should return 401 (different auth id)", async () => {
+    const payload = {
+      store_id: store._id.toString(),
+    };
+    const { status, body } = await supertest(app)
+      .patch(`/api/products/${product._id.toString()}/images`)
+      .set("Cookie", second_user.cookies)
+      .set("Authorization", user.bearer_token)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg")
+      .field(payload);
+
+    expect(status).toBe(401);
+    expect(body).toEqual({
+      data: "Mismatch between `auth_id` and `cookies_id`",
+      message: "Unauthorized!!!",
+      status: 401,
+      success: false,
+    });
+  });
+
+  it("Should return 401 (no cookies)", async () => {
+    const payload = {
+      store_id: store._id.toString(),
+    };
+    const { status, body } = await supertest(app)
+      .patch(`/api/products/${product._id.toString()}/images`)
+      .set("Authorization", user.bearer_token)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg")
+      .field(payload);
+
+    expect(status).toBe(401);
+    expect(body).toEqual({
+      data: "Request cookies not defined",
+      message: "Unauthorized!!!",
+      status: 401,
+      success: false,
+    });
+  });
+
+  it("Should return 401 (no auth header)", async () => {
+    const payload = {
+      store_id: store._id.toString(),
+    };
+    const { status, body } = await supertest(app)
+      .patch(`/api/products/${product._id.toString()}/images`)
+      .set("Cookie", user.cookies)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg")
+      .field(payload);
+
+    expect(status).toBe(401);
+    expect(body).toEqual({
+      data: "Authorization header is needed",
+      message: "Unauthorized!!!",
+      status: 401,
+      success: false,
+    });
+  });
+
+  it("Should return 403 (invalid auth header)", async () => {
+    const payload = {
+      store_id: store._id.toString(),
+    };
+    const { status, body } = await supertest(app)
+      .patch(`/api/products/${product._id.toString()}/images`)
+      .set("Cookie", user.cookies)
+      .set("Authorization", invalid_bearer)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg")
+      .field(payload);
+
+    expect(status).toBe(403);
+    expect(body).toEqual({
+      data: "Invalid token at authorization header",
+      message: "Forbidden!!!",
+      status: 403,
+      success: false,
+    });
+  });
+
+  it("Should return 403 (no access store)", async () => {
+    const payload = {
+      store_id: store._id.toString(),
+    };
+    const { status, body } = await supertest(app)
+      .patch(`/api/products/${product._id.toString()}/images`)
+      .set("Cookie", second_user.cookies)
+      .set("Authorization", second_user.bearer_token)
+      .set("Content-Type", "multipart/form-data")
+      .attach("image", "src/test/images/0.jpg")
+      .field(payload);
+
+    expect(status).toBe(403);
+    expect(body).toEqual({
+      data: "You do not have access rights to this store",
+      message: "Forbidden!!!",
+      status: 403,
+      success: false,
+    });
+  });
+
+  it.skip("Should return 500 ('Failed to upload image to Cloudflare R2')", () => {});
+
+  describe("'SOMETHING' not found", () => {
+    it("Should return 404 ('User' not found)", async () => {
+      const payload = {
+        store_id: store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${product._id.toString()}/images`)
+        .set("Cookie", lost_user.cookies)
+        .set("Authorization", lost_user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "User not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Store' not found)", async () => {
+      const payload = {
+        store_id: lost_store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${product._id.toString()}/images`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Store not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Product' not found)", async () => {
+      const payload = {
+        store_id: store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${lost_user.product._id.toString()}/images`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Product not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Product' not found in the store)", async () => {
+      const payload = {
+        store_id: second_store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${product._id.toString()}/images`)
+        .set("Cookie", second_user.cookies)
+        .set("Authorization", second_user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Product not available in the store",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Product Image' not found)", async () => {
+      const payload = {
+        store_id: second_store._id.toString(),
+      };
+      const { status, body } = await supertest(app)
+        .patch(`/api/products/${second_user.product._id.toString()}/images`)
+        .set("Cookie", second_user.cookies)
+        .set("Authorization", second_user.bearer_token)
+        .set("Content-Type", "multipart/form-data")
+        .attach("image", "src/test/images/0.jpg")
+        .field(payload);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Product image not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+  });
+});
+
 describe("PATCH: `/api/products/:id/stocks/`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
@@ -2519,350 +2439,6 @@ describe("PATCH: `/api/products/:id/stocks/`", () => {
       };
       const { status, body } = await supertest(app)
         .patch(`/api/products/${second_user.product._id.toString()}/stocks`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Product not available in the store",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-  });
-});
-
-describe("DELETE: `/api/products/:id/images`", () => {
-  it("Should return 200 (successfully)", async () => {
-    const payload = {
-      image_id: product.image.toString(),
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(200);
-    expect(body).toEqual({
-      data: {},
-      message: "Delete product image successfully!!",
-      status: 200,
-      success: true,
-    });
-  });
-
-  describe("wrong data type", () => {
-    it("Should return 422 (wrong params type)", async () => {
-      const payload = {
-        image_id: user.product.image,
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${invalid_params}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong data type)", async () => {
-      const payload = {
-        image_id: "H10e26lbE8eb2T2zpp1T0VaH",
-        store_id: invalid_store_id,
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'image_id' type)", async () => {
-      const payload = {
-        image_id: "H10e26lbE8eb2T2zpp1T0VaH",
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'store_id' type)", async () => {
-      const payload = {
-        image_id: user.product.image,
-        store_id: invalid_store_id,
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-  });
-
-  it("Should return 401 (different auth id)", async () => {
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Mismatch between `auth_id` and `cookies_id`",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 401 (no cookies)", async () => {
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Request cookies not defined",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 401 (no auth header)", async () => {
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .send(payload);
-
-    expect(status).toBe(401);
-    expect(body).toEqual({
-      data: "Authorization header is needed",
-      message: "Unauthorized!!!",
-      status: 401,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (invalid auth header)", async () => {
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", invalid_bearer)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "Invalid token at authorization header",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (no access store)", async () => {
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", second_user.cookies)
-      .set("Authorization", second_user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "You do not have access rights to this store",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 403 (no access image)", async () => {
-    const payload = {
-      image_id: second_user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(403);
-    expect(body).toEqual({
-      data: "You do not have access rights to this image",
-      message: "Forbidden!!!",
-      status: 403,
-      success: false,
-    });
-  });
-
-  it("Should return 409 (different product image)", async () => {
-    const payload = {
-      image_id: user.product.image,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .delete(`/api/products/${product._id.toString()}/images`)
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(400);
-    expect(body).toEqual({
-      data: "Mismatch between `product_image_id` and `image_id`",
-      message: "Bad Request!!!",
-      status: 400,
-      success: false,
-    });
-  });
-
-  describe("'SOMETHING' not found", () => {
-    it("Should return 404 ('User' not found)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", lost_user.cookies)
-        .set("Authorization", lost_user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "User not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Store' not found)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: lost_store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Store not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Product' not found)", async () => {
-      const payload = {
-        image_id: product.image.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${lost_user.product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Product not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Image' not found)", async () => {
-      const payload = {
-        image_id: lost_store._id.toString(),
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${product._id.toString()}/images`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Image not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it("Should return 404 ('Product' not found in the store)", async () => {
-      const payload = {
-        image_id: user.product.image,
-        store_id: store._id.toString(),
-      };
-      const { status, body } = await supertest(app)
-        .delete(`/api/products/${second_user.product._id.toString()}/images`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
         .send(payload);

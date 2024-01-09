@@ -1772,20 +1772,26 @@ describe("PATCH: `/api/products/:id/images`", () => {
     expect(body).toEqual({
       data: {
         _id: expect.any(String),
+        base_price: 49999,
         description: "",
         dimensions: {
           height: 0,
           length: 0,
-          unit: "CM",
+          unit: "MM",
           width: 0,
         },
         image: expect.any(String),
         isFavorite: true,
         name: "pepperoni",
         price: 45000,
+        sku: "",
         slug: "Pepperoni",
         stock: 10,
-        weight: 0,
+        upc: "",
+        weight: {
+          unit: "KG",
+          value: 1,
+        },
       },
       message: "Patch product image successfully!!",
       status: 200,

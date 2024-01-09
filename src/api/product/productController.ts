@@ -83,14 +83,21 @@ export const createProduct = async (
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const req_product: CreateProductSchema =
       await CreateProductSchema.parseAsync(req.body);
-    const { sku, upc, description, base_price, weight, ...product_data } =
-      req_product;
+    const {
+      sku,
+      upc,
+      description,
+      base_price,
+      weight,
+      store_id,
+      ...product_data
+    } = req_product;
     const { auth_token } = req.body;
 
     checkForIdMismatch(auth_token.id, cookies.id);
 
     let user: UserSchemaWithId = await getUser(auth_token.id);
-    let store: StoreSchemaWithId = await getStore(product_data.store_id);
+    let store: StoreSchemaWithId = await getStore(store_id);
 
     checkUserWorkAtStore(user, store._id);
 

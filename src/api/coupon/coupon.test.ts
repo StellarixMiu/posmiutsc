@@ -40,7 +40,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 25999,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2023, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -182,7 +182,7 @@ describe("POST: `/api/coupons/`", () => {
         discount: 25999,
         code: "winter23sale",
         starts_date: new Date(),
-        ends_date: new Date(2023, 12, 20),
+        ends_date: new Date(2030, 12, 20),
         store_id: store._id.toString(),
       };
       const { status, body } = await supertest(app)
@@ -208,7 +208,7 @@ describe("POST: `/api/coupons/`", () => {
         discount: 25999,
         code: "winter23sale",
         starts_date: new Date(),
-        ends_date: new Date(2023, 12, 20),
+        ends_date: new Date(2030, 12, 20),
         store_id: invalid_store_id,
       };
       const { status, body } = await supertest(app)
@@ -235,7 +235,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 25999,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2023, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -261,7 +261,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 25999,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2023, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -286,7 +286,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 25999,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2023, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -311,7 +311,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 25999,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2023, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -337,7 +337,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 25999,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2023, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -363,7 +363,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 10000,
       code: "Cl5z6",
       starts_date: new Date(),
-      ends_date: new Date(2024, 5, 24),
+      ends_date: new Date(2030, 5, 24),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -415,7 +415,7 @@ describe("POST: `/api/coupons/`", () => {
       discount: 15000,
       code: "winter23sale",
       starts_date: new Date(),
-      ends_date: new Date(2024, 12, 20),
+      ends_date: new Date(2030, 12, 20),
       store_id: store._id.toString(),
     };
     const { status, body } = await supertest(app)
@@ -442,7 +442,7 @@ describe("POST: `/api/coupons/`", () => {
         discount: 25999,
         code: "newYear23",
         starts_date: new Date(),
-        ends_date: new Date(2024, 1, 10),
+        ends_date: new Date(2030, 1, 10),
         store_id: store._id.toString(),
       };
       const { status, body } = await supertest(app)
@@ -468,7 +468,7 @@ describe("POST: `/api/coupons/`", () => {
         discount: 25999,
         code: "newYear23",
         starts_date: new Date(),
-        ends_date: new Date(2024, 1, 10),
+        ends_date: new Date(2030, 1, 10),
         store_id: lost_store._id.toString(),
       };
       const { status, body } = await supertest(app)

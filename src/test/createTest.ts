@@ -73,7 +73,7 @@ const coupons = [
     discount: 10000,
     code: "Cl5z6",
     starts_date: new Date(),
-    ends_date: new Date(2024, 5, 24),
+    ends_date: new Date(2030, 5, 24),
   },
   {
     name: "back to school",
@@ -82,7 +82,7 @@ const coupons = [
     discount: 150000,
     code: "KyeQl",
     starts_date: new Date(),
-    ends_date: new Date(2023, 12, 20),
+    ends_date: new Date(2030, 12, 20),
   },
 ];
 
@@ -134,13 +134,11 @@ const createTest = async () => {
     const coupon = coupons[i];
     const customer = customers[i];
     const product = products[i];
-
     const login = {
       email: user.email,
       password: user.password,
     };
     let new_user = await testUser(user);
-
     if (!new_user._id) continue;
 
     await supertest(app)
@@ -156,9 +154,7 @@ const createTest = async () => {
           cookies,
         };
       });
-
     let new_store = await testStore(new_user, store);
-
     if (!new_store._id) continue;
 
     new_user = {
@@ -166,7 +162,6 @@ const createTest = async () => {
       store: new_store,
     };
     let new_category = await testCategory(new_user, category);
-
     if (!new_category._id) continue;
 
     new_user = {
@@ -174,7 +169,6 @@ const createTest = async () => {
       category: new_category,
     };
     let new_coupon = await testCoupon(new_user, coupon);
-
     if (!new_coupon._id) continue;
 
     new_user = {
@@ -182,7 +176,6 @@ const createTest = async () => {
       coupon: new_coupon,
     };
     let new_customer = await testCustomer(new_user, customer);
-
     if (!new_customer._id) continue;
 
     new_user = {
@@ -190,7 +183,6 @@ const createTest = async () => {
       customer: new_customer,
     };
     let new_product = await testProduct(new_user, product);
-
     if (!new_product._id) continue;
 
     new_user = {
@@ -201,12 +193,10 @@ const createTest = async () => {
     let new_transaction = await testTransaction(new_user);
 
     if (!new_product._id) continue;
-
     new_user = {
       ...new_user,
       transaction: new_transaction,
     };
-
     if (i === 2) {
       await testLost(new_user);
     }

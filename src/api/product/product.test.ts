@@ -331,28 +331,6 @@ describe("POST: `/api/products/`", () => {
     });
   });
 
-  it("Should return 409 (duplicate data)", async () => {
-    const payload = {
-      name: "Water Bottle",
-      price: 10000,
-      stock: 100,
-      store_id: store._id.toString(),
-    };
-    const { status, body } = await supertest(app)
-      .post("/api/products/")
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
-
-    expect(status).toBe(409);
-    expect(body).toEqual({
-      data: expect.any(String),
-      message: "Bad Request!!!",
-      status: 409,
-      success: false,
-    });
-  });
-
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
       const payload = {

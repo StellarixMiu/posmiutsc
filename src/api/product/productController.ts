@@ -60,6 +60,56 @@ const checkStoreHasProduct = (
 
   return;
 };
+const createSlug = async (
+  product: CreateProductSchema,
+  store: StoreSchemaWithId
+): Promise<string> => {
+  const random_characters = [];
+  const store_names: Array<string> = store.name.split(" ");
+  const product_names: Array<string> = product.name.split(" ");
+  let generated_slug: string = product_names.join("-");
+  let isExist: boolean = await Product.findOne({ slug: generated_slug }).then(
+    (value) => (value ? true : false)
+  );
+  if (isExist) {
+    for (let i = 0; i < store_names.length; i++) {
+      const store_name: string = store_names[i];
+      const store_name_characters: Array<string> = store_name.split("");
+      if (store_name_characters.length <= 3) {
+        random_characters.push(
+          store_name_characters[
+            Math.floor(Math.random() * store_name_characters.length)
+          ]
+        );
+      } else {
+        const random_middle_characters: string =
+          store_name_characters[
+            Math.floor(
+              Math.random() *
+                (store_name_characters.length / 2 +
+                  1 -
+                  (store_name_characters.length / 2 - 1)) +
+                +(store_name_characters.length / 2 - 1)
+            )
+          ];
+        random_characters.push(
+          store_name_characters[0],
+          random_middle_characters,
+          store_name_characters[store_name_characters.length - 1]
+        );
+      }
+    }
+    product_names.push(random_characters.join(""));
+    generated_slug = product_names.join("-");
+  }
+
+  isExist = await Product.findOne({ slug: generated_slug }).then((value) =>
+    value ? true : false
+  );
+  return isExist
+    ? `${generated_slug}-${Math.random().toString(36).substring(2, 7)}`
+    : generated_slug;
+};
 
 export const getProduct = async (
   product_id: string
@@ -101,6 +151,9 @@ export const createProduct = async (
 
     checkUserWorkAtStore(user, store._id);
 
+    const slug: string = await createSlug(req_product, store);
+    // console.log(slug);
+
     const editor: EditorSchema = await createEditor(user._id.toString());
     let product: ProductSchema | ProductSchemaWithId =
       await ProductSchema.parseAsync({
@@ -109,7 +162,7 @@ export const createProduct = async (
         upc: upc || "",
         description: description || "",
         base_price: base_price || product_data.price,
-        slug: product_data.name.split(" ").join("-"),
+        slug: slug,
         created: editor,
         updated: editor,
       });

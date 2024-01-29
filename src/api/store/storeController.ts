@@ -81,7 +81,6 @@ export const createStore = async (
     checkForIdMismatch(auth_token.id, cookies.id);
 
     let user: UserSchemaWithId = await getUser(auth_token.id);
-
     const editor: EditorSchema = await createEditor(user._id.toString());
     let store: StoreSchema | StoreSchemaWithId = await StoreSchema.parseAsync({
       ...store_data,

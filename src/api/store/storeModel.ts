@@ -130,6 +130,7 @@ type StoreSchemaWithId = WithId<StoreSchema>;
 const Store = database.collection<StoreSchema>("Stores");
 
 Store.createIndex({ phone_number: 1 }, { unique: true });
+Store.createIndex({ email: 1 }, { unique: true });
 
 export {
   StoreSchema,

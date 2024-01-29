@@ -152,8 +152,6 @@ export const createProduct = async (
     checkUserWorkAtStore(user, store._id);
 
     const slug: string = await createSlug(req_product, store);
-    // console.log(slug);
-
     const editor: EditorSchema = await createEditor(user._id.toString());
     let product: ProductSchema | ProductSchemaWithId =
       await ProductSchema.parseAsync({

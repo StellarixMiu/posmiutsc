@@ -4,6 +4,7 @@ import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
 import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 
+const multiWhitespaceRegex = new RegExp(/\s+/g);
 const slugRegex = new RegExp(/^[a-zA-Z0-9-]*$/);
 const DimensionsUnitEnum = ["MM", "CM", "M", "INCH"] as const;
 const WeightUnitEnum = ["KG", "GRAM"] as const;
@@ -27,7 +28,8 @@ const ProductSchema = z.object({
       invalid_type_error: "`name` must be a string",
     })
     .min(3, "`name` length must be more than 3")
-    .toLowerCase(),
+    .toLowerCase()
+    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
   base_price: z.number().nonnegative().finite(),
   price: z.number().nonnegative().finite(),
   dimensions: z

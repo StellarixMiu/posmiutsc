@@ -3,13 +3,16 @@ import { ObjectId, WithId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 
+const multiWhitespaceRegex = new RegExp(/\s+/g);
+
 const CustomerSchema = z.object({
   name: z
     .string({
       required_error: "`name` is required",
       invalid_type_error: "`name` must be a string",
     })
-    .min(3, "`name` length must be more than 3"),
+    .min(3, "`name` length must be more than 3")
+    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
   phone_number: z
     .string({
       required_error: "`phone_number` is required",

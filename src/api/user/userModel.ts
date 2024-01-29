@@ -3,6 +3,7 @@ import { WithId, ObjectId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 
 const accountTypeEnum = ["FREE", "PAID"] as const;
+const multiWhitespaceRegex = new RegExp(/\s+/g);
 
 const UserSchema = z.object({
   name: z
@@ -11,7 +12,8 @@ const UserSchema = z.object({
       invalid_type_error: "`name` must be a string",
     })
     .min(3, "`name` length must be more than 3")
-    .toLowerCase(),
+    .toLowerCase()
+    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
   email: z
     .string({
       required_error: "`email` is required",

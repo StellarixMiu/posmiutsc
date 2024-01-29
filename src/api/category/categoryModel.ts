@@ -3,6 +3,8 @@ import { database } from "../../utils/databaseConnection";
 import { ObjectId, WithId } from "mongodb";
 import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 
+const multiWhitespaceRegex = new RegExp(/\s+/g);
+
 const ProductsObjectSchema = z.object({
   products: z
     .instanceof(ObjectId)
@@ -25,7 +27,8 @@ const CategorySchema = z.object({
       invalid_type_error: "`name` must be a string",
     })
     .min(3, "`name` length must be more than 3")
-    .toLowerCase(),
+    .toLowerCase()
+    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
   stores: z
     .object({
       id: z.instanceof(ObjectId).or(

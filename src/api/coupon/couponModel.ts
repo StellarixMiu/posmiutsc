@@ -9,13 +9,16 @@ enum CouponTypeEnum {
   PERCENT = "PERCENT",
 }
 
+const multiWhitespaceRegex = new RegExp(/\s+/g);
+
 const CouponSchema = z.object({
   name: z
     .string({
       required_error: "`name` is required",
       invalid_type_error: "`name` must be a string",
     })
-    .min(3, "`name` length must be more than 3"),
+    .min(3, "`name` length must be more than 3")
+    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
   description: z
     .string({
       invalid_type_error: "`name` must be a string",

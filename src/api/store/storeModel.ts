@@ -3,6 +3,8 @@ import { WithId, ObjectId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
 
+const multiWhitespaceRegex = new RegExp(/\s+/g);
+
 const StoreSchema = z.object({
   name: z
     .string({
@@ -10,7 +12,8 @@ const StoreSchema = z.object({
       invalid_type_error: "`name` must be a string",
     })
     .min(3, "`name` length must be more than 3")
-    .toLowerCase(),
+    .toLowerCase()
+    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
   address: z.string({
     required_error: "`address` is required",
     invalid_type_error: "`address` must be a string",

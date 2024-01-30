@@ -45,6 +45,7 @@ describe("POST: `/api/stores/`", () => {
     const payload = {
       name: "SGroceries",
       address: "Jl Dinoyo 42, Jawa Timur",
+      email: "test0@gmail.com",
       phone_number: "6285110735634",
       type: "Grocery",
     };
@@ -63,6 +64,7 @@ describe("POST: `/api/stores/`", () => {
         categories: [],
         coupons: [],
         customers: [],
+        email: "test0@gmail.com",
         employees: [],
         invoice: {
           isEnable: true,
@@ -86,6 +88,7 @@ describe("POST: `/api/stores/`", () => {
       const payload = {
         name: "sG",
         address: "Jl Dinoyo 42, Jawa Timur",
+        email: "test88@yahoo.com",
         phone_number: 62851107,
         type: "Grocery",
       };
@@ -153,6 +156,7 @@ describe("POST: `/api/stores/`", () => {
     const payload = {
       name: "SGroceries",
       address: "Jl Dinoyo 42, Jawa Timur",
+      email: "test88@gmail.com",
       phone_number: "6285110735634",
       type: "Grocery",
     };
@@ -175,6 +179,7 @@ describe("POST: `/api/stores/`", () => {
     const payload = {
       name: "SGroceries",
       address: "Jl Dinoyo 42, Jawa Timur",
+      email: "test88@gmail.com",
       phone_number: "6285110735634",
       type: "Grocery",
     };
@@ -196,6 +201,7 @@ describe("POST: `/api/stores/`", () => {
     const payload = {
       name: "SGroceries",
       address: "Jl Dinoyo 42, Jawa Timur",
+      email: "test88@gmail.com",
       phone_number: "6285110735634",
       type: "Grocery",
     };
@@ -217,6 +223,7 @@ describe("POST: `/api/stores/`", () => {
     const payload = {
       name: "SGroceries",
       address: "Jl Dinoyo 42, Jawa Timur",
+      email: "test88@gmail.com",
       phone_number: "6285110735634",
       type: "Grocery",
     };
@@ -235,25 +242,51 @@ describe("POST: `/api/stores/`", () => {
     });
   });
 
-  it("Should return 409 (duplicate data)", async () => {
-    const payload = {
-      name: "EZGrocery",
-      address: "Jl Gombel Permai X/254, Jawa Tengah",
-      phone_number: "628597830405",
-      type: "grocery",
-    };
-    const { status, body } = await supertest(app)
-      .post("/api/stores/")
-      .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .send(payload);
+  describe("Duplicate data", () => {
+    it("Should return 409 (duplicate phone_number)", async () => {
+      const payload = {
+        name: "EZGrocery",
+        address: "Jl Gombel Permai X/254, Jawa Tengah",
+        email: "test88@gmail.com",
+        phone_number: "628597830405",
+        type: "grocery",
+      };
+      const { status, body } = await supertest(app)
+        .post("/api/stores/")
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .send(payload);
 
-    expect(status).toBe(409);
-    expect(body).toEqual({
-      data: expect.any(String),
-      message: "Bad Request!!!",
-      status: 409,
-      success: false,
+      expect(status).toBe(409);
+      expect(body).toEqual({
+        data: expect.any(String),
+        message: "Bad Request!!!",
+        status: 409,
+        success: false,
+      });
+    });
+
+    it("Should return 409 (duplicate email)", async () => {
+      const payload = {
+        name: "AGrocery",
+        address: "Jl Gombel Permai X/254, Jawa Tengah",
+        email: "test0@gmail.com",
+        phone_number: "62859833029",
+        type: "grocery",
+      };
+      const { status, body } = await supertest(app)
+        .post("/api/stores/")
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .send(payload);
+
+      expect(status).toBe(409);
+      expect(body).toEqual({
+        data: expect.any(String),
+        message: "Bad Request!!!",
+        status: 409,
+        success: false,
+      });
     });
   });
 
@@ -262,6 +295,7 @@ describe("POST: `/api/stores/`", () => {
       const payload = {
         name: "SGroceries",
         address: "Jl Dinoyo 42, Jawa Timur",
+        email: "test88@gmail.com",
         phone_number: "6285110735634",
         type: "Grocery",
       };
@@ -300,6 +334,7 @@ describe("POST: `/api/stores/:id/logo`", () => {
         categories: [],
         coupons: [],
         customers: [],
+        email: "test0@gmail.com",
         employees: [],
         invoice: {
           isEnable: true,
@@ -511,6 +546,7 @@ describe("GET: `/api/stores/:id", () => {
         categories: [],
         coupons: [],
         customers: [],
+        email: "test0@gmail.com",
         employees: [],
         invoice: {
           isEnable: true,
@@ -670,6 +706,7 @@ describe("GET: `/api/stores/user/:id", () => {
           categories: expect.any(Array<String>),
           coupons: expect.any(Array<String>),
           customers: expect.any(Array<String>),
+          email: "test@gmail.com",
           employees: [],
           invoice: {
             isEnable: true,
@@ -688,6 +725,7 @@ describe("GET: `/api/stores/user/:id", () => {
           categories: [],
           coupons: [],
           customers: [],
+          email: "test0@gmail.com",
           employees: [],
           invoice: {
             isEnable: true,
@@ -807,6 +845,7 @@ describe("GET: `/api/stores/user/:id", () => {
           name: "The corner shop",
           address: "Jl Dinoyo 12, Jawa Timur",
           phone_number: "6285110738411",
+          email: "test80@gmail.com",
           type: "Grocery",
         })
         .then(async ({ body }) => {

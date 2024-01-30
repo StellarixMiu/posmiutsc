@@ -28,12 +28,12 @@ const StoreSchema = z.object({
     .max(15, "`phone_number` length must between 10 and 15 digits"),
   email: z
     .string({
+      required_error: "`email` is required",
       invalid_type_error: "`email` must be a string",
     })
     .email("`email` must be a valid email")
     .endsWith("@gmail.com", "`email` must be a valid email")
-    .toLowerCase()
-    .optional(),
+    .toLowerCase(),
   logo: z
     .instanceof(ObjectId)
     .or(

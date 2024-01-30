@@ -35,18 +35,21 @@ const stores = [
   {
     name: "Storely",
     address: "Jl Keatrian V A 12, Dki Jakarta",
+    email: "test@gmail.com",
     phone_number: "6285741248965",
     type: "grocery",
   },
   {
     name: "EZGrocery",
     address: "Jl Gombel Permai X/254, Jawa Tengah",
+    email: "test2@gmail.com",
     phone_number: "628597830405",
     type: "grocery",
   },
   {
     name: "The Corner Egg",
     address: "Jl Sultan Iskandar Muda Bl F/25 RT 011/02, Dki Jakarta",
+    email: "test3@gmail.com",
     phone_number: "628514021670",
     type: "restaurant",
   },

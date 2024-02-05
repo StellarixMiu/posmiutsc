@@ -104,7 +104,8 @@ const CreateProductSchema = ProductSchema.omit({
   })
   .merge(BodyWithStoreId);
 const GetProductSchemaByStoreId = z.object({
-  limit: z.number().nonnegative().finite().gte(1).lte(10).default(5).optional(),
+  from: z.number().nonnegative().finite().default(0).optional(),
+  limit: z.number().nonnegative().finite().gte(1).lte(10).default(20),
 });
 const GetProductSchemaBySlug = ProductSchema.pick({ slug: true });
 const PatchProductSchema = ProductSchema.pick({

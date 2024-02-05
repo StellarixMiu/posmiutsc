@@ -1213,25 +1213,6 @@ describe("GET: `/api/products/store/:id`", () => {
         success: false,
       });
     });
-
-    it("Should return 404 ('Product' not found)", async () => {
-      const payload = {
-        limit: 10,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/products/store/${second_store._id.toString()}`)
-        .set("Cookie", second_user.cookies)
-        .set("Authorization", second_user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Product not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
   });
 });
 

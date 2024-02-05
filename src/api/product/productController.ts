@@ -333,37 +333,41 @@ export const getProductByStoreId = async (
   next: NextFunction
 ) => {
   try {
-    const products: Array<ProductSchemaWithId> = [];
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const store_id = req.params.id;
-    const { limit } = await GetProductSchemaByStoreId.parseAsync(req.body);
+    const { limit, from } = await GetProductSchemaByStoreId.parseAsync(
+      req.body
+    );
     const { auth_token } = req.body;
 
     checkForIdMismatch(auth_token.id, cookies.id);
 
-    let image: ImageSchemaWithId;
     let user: UserSchemaWithId = await getUser(auth_token.id);
     let store: StoreSchemaWithId = await getStore(store_id);
 
     checkUserWorkAtStore(user, store._id);
 
-    for (const product_id of store.products) {
-      let product: ProductSchemaWithId = await Product.findOne({
-        _id: new ObjectId(product_id),
-      }).then((value) => {
-        if (value === null)
-          throw new RequestError(404, "Not Found!!!", "Product not found");
-        return value;
+    const skip: number = from ? -from : 0;
+    const store_products: Array<ObjectId> = store.products.map(
+      (product) => new ObjectId(product)
+    );
+    const products: Array<ProductSchemaWithId> = await Product.find({
+      _id: { $in: store_products },
+    })
+      .skip(skip)
+      .limit(limit)
+      .toArray()
+      .then(async (values) => {
+        for (let i = 0; i < values.length; i++) {
+          if (values[i].image && values[i].image.toString().length !== 0) {
+            const image: ImageSchemaWithId = await getImage(
+              values[i].image.toString()
+            );
+            values[i].image = image.full_path;
+          }
+        }
+        return values;
       });
-
-      if (product.image.toString().length !== 0 || product.image) {
-        image = await getImage(product.image.toString());
-        product.image = image.full_path;
-      }
-
-      products.push(product);
-    }
-
     const response = new ResponseData(
       true,
       200,
@@ -691,7 +695,7 @@ export const deleteProduct = async (
     checkUserWorkAtStore(user, store._id);
     checkStoreHasProduct(product, store);
 
-    if (product.image || product.image.length !== 0) {
+    if (product.image) {
       let image: ImageSchemaWithId = await getImage(product.image.toString());
       await deleteR2Image(image?.name.split(".")[0]);
       await Image.deleteOne({ _id: image._id }).then((value) => {

@@ -67,7 +67,7 @@ const coupons = [
     type: "PRICE",
     discount: 15000,
     code: "TmmJy",
-    ends_date: new Date(2024, 1, 3),
+    ends_date: new Date(2030, 1, 3),
   },
   {
     name: "spring deal",

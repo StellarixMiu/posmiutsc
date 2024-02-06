@@ -12,15 +12,12 @@ function requestValidation(validators: RequestValidators) {
     try {
       let result;
       if (validators.params) {
-        // console.log(req.params);
         result = await validators.params?.parseAsync(req.params);
       }
       if (validators.body) {
-        // console.log(req.body);
         result = await validators.body?.parseAsync(req.body);
       }
       if (validators.query) {
-        // console.log(req.query);
         result = await validators.query?.parseAsync(req.query);
       }
       next();

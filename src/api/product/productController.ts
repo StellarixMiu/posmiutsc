@@ -288,7 +288,7 @@ export const getProductById = async (
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const product_data: BodyWithStoreId = await BodyWithStoreId.parseAsync(
-      req.body
+      req.query
     );
     const product_id = req.params.id;
     const { auth_token } = req.body;
@@ -336,7 +336,7 @@ export const getProductByStoreId = async (
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const store_id = req.params.id;
     const { limit, from } = await GetProductSchemaByStoreId.parseAsync(
-      req.body
+      req.query
     );
     const { auth_token } = req.body;
 

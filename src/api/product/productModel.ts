@@ -105,7 +105,7 @@ const CreateProductSchema = ProductSchema.omit({
   .merge(BodyWithStoreId);
 const GetProductSchemaByStoreId = z.object({
   from: z.number().nonnegative().finite().default(0).optional(),
-  limit: z.number().nonnegative().finite().gte(1).lte(10).default(20),
+  limit: z.number().nonnegative().finite().gte(1).lte(99).default(20),
 });
 const GetProductSchemaBySlug = ProductSchema.pick({ slug: true });
 const PatchProductSchema = ProductSchema.pick({
@@ -122,13 +122,21 @@ const PatchProductSchema = ProductSchema.pick({
 })
   .partial()
   .merge(BodyWithStoreId);
-
 const PatchStockProductSchema = BodyWithStoreId.merge(
   z.object({
     before: z.number().nonnegative().finite(),
     after: z.number().nonnegative().finite(),
   })
 );
+
+const QueryGetProductSchemaByStoreId = z.object({
+  from: z
+    .string()
+    .default("0")
+    .transform((value) => parseInt(value))
+    .optional(),
+  limit: z.string().transform((value) => parseInt(value)),
+});
 
 type ProductSchema = z.infer<typeof ProductSchema>;
 type CreateProductSchema = z.infer<typeof CreateProductSchema>;
@@ -137,6 +145,10 @@ type GetProductSchemaBySlug = z.infer<typeof GetProductSchemaBySlug>;
 type PatchProductSchema = z.infer<typeof PatchProductSchema>;
 type PatchStockProductSchema = z.infer<typeof PatchStockProductSchema>;
 type ProductSchemaWithId = WithId<ProductSchema>;
+
+type QueryGetProductSchemaByStoreId = z.infer<
+  typeof QueryGetProductSchemaByStoreId
+>;
 
 const Product = database.collection<ProductSchema>("Products");
 
@@ -151,5 +163,6 @@ export {
   PatchProductSchema,
   PatchStockProductSchema,
   ProductSchemaWithId,
+  QueryGetProductSchemaByStoreId,
   DimensionsUnitEnum,
 };

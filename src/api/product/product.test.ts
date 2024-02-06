@@ -712,7 +712,7 @@ describe("GET: `/api/products/:id`", () => {
       .get(`/api/products/${product._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
     product = body.data;
 
     expect(status).toBe(200);
@@ -755,7 +755,7 @@ describe("GET: `/api/products/:id`", () => {
         .get(`/api/products/${invalid_params}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -774,7 +774,7 @@ describe("GET: `/api/products/:id`", () => {
         .get(`/api/products/${product._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -794,7 +794,7 @@ describe("GET: `/api/products/:id`", () => {
       .get(`/api/products/${product._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -812,7 +812,7 @@ describe("GET: `/api/products/:id`", () => {
     const { status, body } = await supertest(app)
       .get(`/api/products/${product._id.toString()}`)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -830,7 +830,7 @@ describe("GET: `/api/products/:id`", () => {
     const { status, body } = await supertest(app)
       .get(`/api/products/${product._id.toString()}`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -849,7 +849,7 @@ describe("GET: `/api/products/:id`", () => {
       .get(`/api/products/${product._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -868,7 +868,7 @@ describe("GET: `/api/products/:id`", () => {
       .get(`/api/products/${product._id.toString()}`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -888,7 +888,7 @@ describe("GET: `/api/products/:id`", () => {
         .get(`/api/products/${product._id.toString()}`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -907,7 +907,7 @@ describe("GET: `/api/products/:id`", () => {
         .get(`/api/products/${product._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -942,7 +942,7 @@ describe("GET: `/api/products/:id`", () => {
         .get(`/api/products/${lost_id.toString()}`)
         .set("Cookie", second_user.cookies)
         .set("Authorization", second_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -961,7 +961,7 @@ describe("GET: `/api/products/:id`", () => {
         .get(`/api/products/${second_user.product._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -977,13 +977,13 @@ describe("GET: `/api/products/:id`", () => {
 describe("GET: `/api/products/store/:id`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -1012,29 +1012,6 @@ describe("GET: `/api/products/store/:id`", () => {
             value: 0,
           },
         },
-        {
-          _id: expect.any(String),
-          base_price: 49999,
-          description: "",
-          dimensions: {
-            height: 0,
-            length: 0,
-            unit: "MM",
-            width: 0,
-          },
-          image: expect.any(String),
-          isFavorite: false,
-          name: "pizza",
-          price: 49999,
-          sku: "",
-          slug: "pizza",
-          stock: 10,
-          upc: "",
-          weight: {
-            unit: "GRAM",
-            value: 0,
-          },
-        },
       ],
       message: "Get product by store id successfully!!",
       status: 200,
@@ -1051,7 +1028,7 @@ describe("GET: `/api/products/store/:id`", () => {
         .get(`/api/products/store/${invalid_params}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -1070,7 +1047,7 @@ describe("GET: `/api/products/store/:id`", () => {
         .get(`/api/products/store/${store._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -1090,7 +1067,7 @@ describe("GET: `/api/products/store/:id`", () => {
       .get(`/api/products/store/${store._id.toString()}`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -1108,7 +1085,7 @@ describe("GET: `/api/products/store/:id`", () => {
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -1126,7 +1103,7 @@ describe("GET: `/api/products/store/:id`", () => {
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -1145,7 +1122,7 @@ describe("GET: `/api/products/store/:id`", () => {
       .get(`/api/products/store/${store._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -1164,7 +1141,7 @@ describe("GET: `/api/products/store/:id`", () => {
       .get(`/api/products/store/${store._id.toString()}`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -1184,7 +1161,7 @@ describe("GET: `/api/products/store/:id`", () => {
         .get(`/api/products/store/${store._id.toString()}`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -1203,7 +1180,7 @@ describe("GET: `/api/products/store/:id`", () => {
         .get(`/api/products/store/${lost_store._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({

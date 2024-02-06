@@ -6,6 +6,7 @@ import {
   GetProductSchemaByStoreId,
   PatchProductSchema,
   PatchStockProductSchema,
+  QueryGetProductSchemaByStoreId,
 } from "./productModel";
 import {
   createProduct,
@@ -22,6 +23,7 @@ import upload from "../../middleware/imageMiddleware";
 import ParamsWithId from "../../utils/params/paramsModel";
 import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 import requestValidation from "../../middleware/validationMiddleware";
+import queryParse from "../../middleware/queryMiddleware";
 
 const router = Router();
 
@@ -49,7 +51,7 @@ router.get(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    query: BodyWithStoreId,
   }),
   verifyToken(),
   getProductById
@@ -57,9 +59,10 @@ router.get(
 
 router.get(
   "/store/:id",
+  queryParse(QueryGetProductSchemaByStoreId),
   requestValidation({
     params: ParamsWithId,
-    body: GetProductSchemaByStoreId,
+    query: GetProductSchemaByStoreId,
   }),
   verifyToken(),
   getProductByStoreId

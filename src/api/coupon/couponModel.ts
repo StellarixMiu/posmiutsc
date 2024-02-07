@@ -1,15 +1,14 @@
 import { z } from "zod";
-import { ObjectId, WithId } from "mongodb";
+import { WithId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
+import WithStoreId from "../../utils/withStoreId";
+import removeMultiWhitespace from "../../utils/removeMultiWhitespace";
 
 enum CouponTypeEnum {
   PRICE = "PRICE",
   PERCENT = "PERCENT",
 }
-
-const multiWhitespaceRegex = new RegExp(/\s+/g);
 
 const CouponSchema = z.object({
   name: z
@@ -18,7 +17,7 @@ const CouponSchema = z.object({
       invalid_type_error: "`name` must be a string",
     })
     .min(3, "`name` length must be more than 3")
-    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
+    .transform((value) => removeMultiWhitespace(value)),
   description: z
     .string({
       invalid_type_error: "`name` must be a string",
@@ -50,24 +49,37 @@ const CreateCouponSchema = CouponSchema.omit({
   isActive: true,
   created: true,
   updated: true,
-}).merge(BodyWithStoreId);
-const GetCouponSchemaById = BodyWithStoreId;
+}).merge(WithStoreId);
 const GetCouponSchemaByStoreId = z.object({
-  limit: z.number().nonnegative().finite().gte(1).lte(10).default(5).optional(),
+  from: z.number().nonnegative().finite().default(0).optional(),
+  limit: z.number().nonnegative().finite().gte(1).lte(99).default(20),
 });
 const PatchCouponSchema = CouponSchema.pick({
   name: true,
   description: true,
   type: true,
   discount: true,
-}).merge(BodyWithStoreId);
+}).merge(WithStoreId);
+
+const QueryGetCouponSchemaByStoreId = z.object({
+  from: z
+    .string()
+    .default("0")
+    .transform((value) => parseInt(value))
+    .optional(),
+  limit: z.string().transform((value) => parseInt(value)),
+});
 
 type CouponSchema = z.infer<typeof CouponSchema>;
 type CreateCouponSchema = z.infer<typeof CreateCouponSchema>;
-type GetCouponSchemaById = z.infer<typeof GetCouponSchemaById>;
+type GetCouponSchemaById = z.infer<typeof WithStoreId>;
 type GetCouponSchemaByStoreId = z.infer<typeof GetCouponSchemaByStoreId>;
 type PatchCouponSchema = z.infer<typeof PatchCouponSchema>;
 type CouponSchemaWithId = WithId<CouponSchema>;
+
+type QueryGetCouponSchemaByStoreId = z.infer<
+  typeof QueryGetCouponSchemaByStoreId
+>;
 
 const Coupon = database.collection<CouponSchema>("Coupons");
 
@@ -77,6 +89,7 @@ Coupon.createIndex({ discount: 1 });
 Coupon.createIndex({ code: 1 }, { unique: true });
 
 export {
+  Coupon,
   CouponSchema,
   CreateCouponSchema,
   GetCouponSchemaById,
@@ -84,5 +97,5 @@ export {
   PatchCouponSchema,
   CouponSchemaWithId,
   CouponTypeEnum,
-  Coupon,
+  QueryGetCouponSchemaByStoreId,
 };

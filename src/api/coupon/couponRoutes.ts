@@ -2,9 +2,9 @@ import { Router } from "express";
 import { verifyToken } from "../../middleware/tokenMiddleware";
 import {
   CreateCouponSchema,
-  GetCouponSchemaById,
   GetCouponSchemaByStoreId,
   PatchCouponSchema,
+  QueryGetCouponSchemaByStoreId,
 } from "./couponModel";
 import {
   createCoupon,
@@ -13,9 +13,10 @@ import {
   getCouponByStoreId,
   patchCoupon,
 } from "./couponController";
+import queryParse from "../../middleware/queryMiddleware";
+import WithStoreId from "../../utils/withStoreId";
 import ParamsWithId from "../../utils/params/paramsModel";
 import requestValidation from "../../middleware/validationMiddleware";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: GetCouponSchemaById,
+    query: WithStoreId,
   }),
   verifyToken(),
   getCouponById
@@ -38,9 +39,10 @@ router.get(
 
 router.get(
   "/store/:id",
+  queryParse(QueryGetCouponSchemaByStoreId),
   requestValidation({
     params: ParamsWithId,
-    body: GetCouponSchemaByStoreId,
+    query: GetCouponSchemaByStoreId,
   }),
   verifyToken(),
   getCouponByStoreId
@@ -60,7 +62,7 @@ router.delete(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    body: WithStoreId,
   }),
   verifyToken(),
   deleteCoupon

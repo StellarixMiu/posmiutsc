@@ -13,14 +13,13 @@ import {
   CouponSchemaWithId,
   CouponTypeEnum,
   CreateCouponSchema,
-  GetCouponSchemaById,
   GetCouponSchemaByStoreId,
   PatchCouponSchema,
 } from "./couponModel";
+import WithStoreId from "../../utils/withStoreId";
 import createEditor from "../../utils/editor/editorController";
 import ResponseData from "../../utils/responseHandler";
 import verifyCookies from "../../utils/cookiesHandler";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 import checkForIdMismatch from "../../utils/CheckId";
 import checkUserWorkAtStore from "../../utils/checkWorkAt";
 
@@ -170,8 +169,7 @@ export const getCouponById = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const coupon_data: GetCouponSchemaById =
-      await GetCouponSchemaById.parseAsync(req.body);
+    const coupon_data: WithStoreId = await WithStoreId.parseAsync(req.query);
     const coupon_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -209,9 +207,10 @@ export const getCouponByStoreId = async (
   next: NextFunction
 ) => {
   try {
-    const coupons: Array<CouponSchemaWithId> = [];
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const coupon_data = await GetCouponSchemaByStoreId.parseAsync(req.body); // TODO  using limit
+    const { limit, from } = await GetCouponSchemaByStoreId.parseAsync(
+      req.query
+    );
     const store_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -222,17 +221,17 @@ export const getCouponByStoreId = async (
 
     checkUserWorkAtStore(user, store._id);
 
-    for (const id of store.coupons) {
-      const coupon: CouponSchemaWithId = await Coupon.findOne({
-        _id: new ObjectId(id),
-      }).then((value) => {
-        if (value === null)
-          throw new RequestError(404, "Not Found!!!", "Coupon not found");
-        return value;
-      });
-      coupons.push(coupon);
-    }
-
+    const skip: number = from ? from : 0;
+    const store_coupons: Array<ObjectId> = store.coupons.map(
+      (coupon) => new ObjectId(coupon)
+    );
+    const coupons: Array<CouponSchemaWithId> = await Coupon.find({
+      _id: { $in: store_coupons },
+    })
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
     const response = new ResponseData(
       true,
       200,
@@ -314,9 +313,7 @@ export const deleteCoupon = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const coupon_data: BodyWithStoreId = await BodyWithStoreId.parseAsync(
-      req.body
-    );
+    const coupon_data: WithStoreId = await WithStoreId.parseAsync(req.body);
     const coupon_id = req.params.id;
     const { auth_token } = req.body;
 

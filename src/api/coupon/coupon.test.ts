@@ -1,7 +1,6 @@
 import app from "../../app";
 import supertest from "supertest";
-import { ObjectId } from "mongodb";
-import { Coupon, CouponSchemaWithId } from "./couponModel";
+import { CouponSchemaWithId } from "./couponModel";
 import createTest from "../../test/createTest";
 
 let coupon: CouponSchemaWithId;
@@ -497,7 +496,7 @@ describe("GET: `/api/coupons/:id", () => {
       .get(`/api/coupons/${coupon._id}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -527,7 +526,7 @@ describe("GET: `/api/coupons/:id", () => {
         .get(`/api/coupons/${invalid_params}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -546,7 +545,7 @@ describe("GET: `/api/coupons/:id", () => {
         .get(`/api/coupons/${coupon._id}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -566,7 +565,7 @@ describe("GET: `/api/coupons/:id", () => {
       .get(`/api/coupons/${coupon._id}`)
       .set("Cookie", user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -584,7 +583,7 @@ describe("GET: `/api/coupons/:id", () => {
     const { status, body } = await supertest(app)
       .get(`/api/coupons/${coupon._id}`)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -602,7 +601,7 @@ describe("GET: `/api/coupons/:id", () => {
     const { status, body } = await supertest(app)
       .get(`/api/coupons/${coupon._id}`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -621,7 +620,7 @@ describe("GET: `/api/coupons/:id", () => {
       .get(`/api/coupons/${coupon._id}`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -640,7 +639,7 @@ describe("GET: `/api/coupons/:id", () => {
       .get(`/api/coupons/${coupon._id}`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -660,7 +659,7 @@ describe("GET: `/api/coupons/:id", () => {
         .get(`/api/coupons/${coupon._id}`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -679,7 +678,7 @@ describe("GET: `/api/coupons/:id", () => {
         .get(`/api/coupons/${coupon._id}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -698,7 +697,7 @@ describe("GET: `/api/coupons/:id", () => {
         .get(`/api/coupons/${lost_user.coupon._id}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -717,7 +716,7 @@ describe("GET: `/api/coupons/:id", () => {
         .get(`/api/coupons/${second_user.coupon._id}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -733,13 +732,14 @@ describe("GET: `/api/coupons/:id", () => {
 describe("GET: `/api/coupons/store/:id", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/coupons/store/${store._id}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -754,17 +754,6 @@ describe("GET: `/api/coupons/store/:id", () => {
           starts_date: expect.any(String),
           type: "PRICE",
         },
-        {
-          _id: expect.any(String),
-          code: "WINTER23SALE",
-          description: "winter fest sale coupon",
-          discount: 25999,
-          ends_date: expect.any(String),
-          isActive: true,
-          name: "winter sale",
-          starts_date: expect.any(String),
-          type: "PRICE",
-        },
       ],
       message: "Get coupon by store id successfully!!",
       status: 200,
@@ -775,13 +764,14 @@ describe("GET: `/api/coupons/store/:id", () => {
   describe("wrong data type", () => {
     it("Should return 422 (wrong params type)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/coupons/store/${invalid_params}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -795,12 +785,33 @@ describe("GET: `/api/coupons/store/:id", () => {
     it("Should return 422 (wrong 'limit' type)", async () => {
       const payload = {
         limit: -1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/coupons/store/${store._id}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: expect.any(Array),
+        message: "ZodError!!!",
+        status: 422,
+        success: false,
+      });
+    });
+
+    it("Should return 422 (wrong 'from' type)", async () => {
+      const payload = {
+        limit: 1,
+        from: -1,
+      };
+      const { status, body } = await supertest(app)
+        .get(`/api/coupons/store/${store._id}`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -814,13 +825,14 @@ describe("GET: `/api/coupons/store/:id", () => {
 
   it("Should return 401 (different auth id)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/coupons/store/${store._id}`)
       .set("Cookie", user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -833,13 +845,13 @@ describe("GET: `/api/coupons/store/:id", () => {
 
   it("Should return 401 (no cookies)", async () => {
     const payload = {
-      store_id: store._id.toString(),
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/coupons/store/${store._id}`)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -852,12 +864,13 @@ describe("GET: `/api/coupons/store/:id", () => {
 
   it("Should return 401 (no auth header)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/coupons/store/${store._id}`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -870,13 +883,14 @@ describe("GET: `/api/coupons/store/:id", () => {
 
   it("Should return 403 (invalid auth header)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/coupons/store/${store._id}`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -889,13 +903,14 @@ describe("GET: `/api/coupons/store/:id", () => {
 
   it("Should return 403 (no access store)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/coupons/store/${store._id}`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -909,13 +924,14 @@ describe("GET: `/api/coupons/store/:id", () => {
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/coupons/store/${store._id}`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -928,36 +944,18 @@ describe("GET: `/api/coupons/store/:id", () => {
 
     it("Should return 404 ('Store' not found)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/coupons/store/${lost_store._id}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
         data: "Store not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it.skip("Should return 404 ('Coupon' not found)", async () => {
-      const payload = {
-        limit: 10,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/coupons/store/${store._id}`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Coupon not found",
         message: "Not Found!!!",
         status: 404,
         success: false,

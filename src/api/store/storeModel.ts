@@ -2,8 +2,7 @@ import { z } from "zod";
 import { WithId, ObjectId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
-
-const multiWhitespaceRegex = new RegExp(/\s+/g);
+import removeMultiWhitespace from "../../utils/removeMultiWhitespace";
 
 const StoreSchema = z.object({
   name: z
@@ -13,7 +12,7 @@ const StoreSchema = z.object({
     })
     .min(3, "`name` length must be more than 3")
     .toLowerCase()
-    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
+    .transform((value) => removeMultiWhitespace(value)),
   address: z.string({
     required_error: "`address` is required",
     invalid_type_error: "`address` must be a string",
@@ -114,7 +113,8 @@ const CreateStoreSchema = StoreSchema.pick({
   type: true,
 });
 const GetStoreSchemaByUserId = z.object({
-  limit: z.number().nonnegative().finite().gte(1).lte(10).default(5).optional(),
+  from: z.number().nonnegative().finite().default(0).optional(),
+  limit: z.number().nonnegative().finite().gte(1).lte(99).default(20),
 });
 const PatchStoreSchema = StoreSchema.pick({
   name: true,
@@ -124,11 +124,22 @@ const PatchStoreSchema = StoreSchema.pick({
   type: true,
 }).partial();
 
+const QueryGetStoreSchemaByUserId = z.object({
+  from: z
+    .string()
+    .default("0")
+    .transform((value) => parseInt(value))
+    .optional(),
+  limit: z.string().transform((value) => parseInt(value)),
+});
+
 type StoreSchema = z.infer<typeof StoreSchema>;
 type CreateStoreSchema = z.infer<typeof CreateStoreSchema>;
 type GetStoreSchemaByUserId = z.infer<typeof GetStoreSchemaByUserId>;
 type PatchStoreSchema = z.infer<typeof PatchStoreSchema>;
 type StoreSchemaWithId = WithId<StoreSchema>;
+
+type QueryGetStoreSchemaByUserId = z.infer<typeof QueryGetStoreSchemaByUserId>;
 
 const Store = database.collection<StoreSchema>("Stores");
 
@@ -136,10 +147,11 @@ Store.createIndex({ phone_number: 1 }, { unique: true });
 Store.createIndex({ email: 1 }, { unique: true });
 
 export {
+  Store,
   StoreSchema,
   CreateStoreSchema,
   GetStoreSchemaByUserId,
   PatchStoreSchema,
   StoreSchemaWithId,
-  Store,
+  QueryGetStoreSchemaByUserId,
 };

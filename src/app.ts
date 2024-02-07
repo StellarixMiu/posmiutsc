@@ -26,7 +26,7 @@ app.use(cookieParser());
 app.use(cors(corsConfig));
 app.options("*", cors(corsConfig));
 app.use(helmet());
-app.use(morgan("tiny"));
+// app.use(morgan("tiny"));
 
 app.use("/api/", ApiRouter);
 

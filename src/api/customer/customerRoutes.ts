@@ -2,9 +2,9 @@ import { Router } from "express";
 import { verifyToken } from "../../middleware/tokenMiddleware";
 import {
   CreateCustomerSchema,
-  GetCustomerSchemaById,
   GetCustomerSchemaByStoreId,
   PatchCustomerSchema,
+  QueryGetCustomerSchemaByStoreId,
 } from "./customerModel";
 import {
   createCustomer,
@@ -13,9 +13,10 @@ import {
   getCustomerByStoreId,
   patchCustomer,
 } from "./customerController";
-import requestValidation from "../../middleware/validationMiddleware";
+import WithStoreId from "../../utils/withStoreId";
 import ParamsWithId from "../../utils/params/paramsModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
+import requestValidation from "../../middleware/validationMiddleware";
+import queryParse from "../../middleware/queryMiddleware";
 
 const router = Router();
 
@@ -32,7 +33,7 @@ router.get(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: GetCustomerSchemaById,
+    query: WithStoreId,
   }),
   verifyToken(),
   getCustomerById
@@ -40,9 +41,10 @@ router.get(
 
 router.get(
   "/store/:id",
+  queryParse(QueryGetCustomerSchemaByStoreId),
   requestValidation({
     params: ParamsWithId,
-    body: GetCustomerSchemaByStoreId,
+    query: GetCustomerSchemaByStoreId,
   }),
   verifyToken(),
   getCustomerByStoreId
@@ -62,7 +64,7 @@ router.delete(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    body: WithStoreId,
   }),
   verifyToken(),
   deleteCustomer

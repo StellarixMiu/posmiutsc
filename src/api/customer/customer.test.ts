@@ -313,7 +313,7 @@ describe("GET: `/api/customers/:id`", () => {
       .get(`/api/customers/${customer._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -339,7 +339,7 @@ describe("GET: `/api/customers/:id`", () => {
         .get(`/api/customers/${invalid_params}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -358,7 +358,7 @@ describe("GET: `/api/customers/:id`", () => {
         .get(`/api/customers/${customer._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -378,7 +378,7 @@ describe("GET: `/api/customers/:id`", () => {
       .get(`/api/customers/${customer._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", second_user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -396,7 +396,7 @@ describe("GET: `/api/customers/:id`", () => {
     const { status, body } = await supertest(app)
       .get(`/api/customers/${customer._id.toString()}`)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -414,7 +414,7 @@ describe("GET: `/api/customers/:id`", () => {
     const { status, body } = await supertest(app)
       .get(`/api/customers/${customer._id.toString()}`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -433,7 +433,7 @@ describe("GET: `/api/customers/:id`", () => {
       .get(`/api/customers/${customer._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -452,7 +452,7 @@ describe("GET: `/api/customers/:id`", () => {
       .get(`/api/customers/${customer._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -472,7 +472,7 @@ describe("GET: `/api/customers/:id`", () => {
         .get(`/api/customers/${customer._id.toString()}`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -491,7 +491,7 @@ describe("GET: `/api/customers/:id`", () => {
         .get(`/api/customers/${customer._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -510,9 +510,9 @@ describe("GET: `/api/customers/:id`", () => {
         .get(`/api/customers/${lost_user.customer._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
-      // expect(status).toBe(404);
+      expect(status).toBe(404);
       expect(body).toEqual({
         data: "Customer not found",
         message: "Not Found!!!",
@@ -529,7 +529,7 @@ describe("GET: `/api/customers/:id`", () => {
         .get(`/api/customers/${second_user.customer._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -545,13 +545,14 @@ describe("GET: `/api/customers/:id`", () => {
 describe("GET: `/api/customers/store/:id`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/customers/store/${store._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -561,13 +562,6 @@ describe("GET: `/api/customers/store/:id`", () => {
           address: "Jl Jemursari Slt VIII 3, Jawa Timur",
           name: "Keisha Purwanti",
           phone_number: "6284571263800",
-          transactions: expect.any(Array<ObjectId>),
-        },
-        {
-          _id: expect.any(String),
-          address: "Jl Ciputat Raya 3 A, Dki Jakarta",
-          name: "Lantar Santoso",
-          phone_number: "6285102449638",
           transactions: expect.any(Array<ObjectId>),
         },
       ],
@@ -580,13 +574,14 @@ describe("GET: `/api/customers/store/:id`", () => {
   describe("wrong data type", () => {
     it("Should return 422 (wrong params type)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/customers/store/${invalid_params}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -599,13 +594,14 @@ describe("GET: `/api/customers/store/:id`", () => {
 
     it("Should return 422 (wrong 'limit' type)", async () => {
       const payload = {
-        limit: -5,
+        limit: -1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/customers/store/${store._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -615,17 +611,20 @@ describe("GET: `/api/customers/store/:id`", () => {
         success: false,
       });
     });
+
+    it.todo("Should return 422 (wrong 'from' type)");
   });
 
   it("Should return 401 (different auth id)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/customers/store/${store._id.toString()}`)
       .set("Cookie", second_user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -638,12 +637,13 @@ describe("GET: `/api/customers/store/:id`", () => {
 
   it("Should return 401 (no cookies)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/customers/store/${store._id.toString()}`)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -656,12 +656,13 @@ describe("GET: `/api/customers/store/:id`", () => {
 
   it("Should return 401 (no auth header)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/customers/store/${store._id.toString()}`)
       .set("Cookie", user.cookies)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -674,13 +675,14 @@ describe("GET: `/api/customers/store/:id`", () => {
 
   it("Should return 403 (invalid auth header)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/customers/store/${second_store._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", invalid_bearer)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -693,13 +695,14 @@ describe("GET: `/api/customers/store/:id`", () => {
 
   it("Should return 403 (no access store)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/customers/store/${second_store._id.toString()}`)
       .set("Cookie", user.cookies)
       .set("Authorization", user.bearer_token)
-      .send(payload);
+      .query(payload);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -713,13 +716,14 @@ describe("GET: `/api/customers/store/:id`", () => {
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/customers/store/${store._id.toString()}`)
         .set("Cookie", lost_user.cookies)
         .set("Authorization", lost_user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
@@ -732,36 +736,18 @@ describe("GET: `/api/customers/store/:id`", () => {
 
     it("Should return 404 ('Store' not found)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/customers/store/${lost_store._id.toString()}`)
         .set("Cookie", user.cookies)
         .set("Authorization", user.bearer_token)
-        .send(payload);
+        .query(payload);
 
       expect(status).toBe(404);
       expect(body).toEqual({
         data: "Store not found",
-        message: "Not Found!!!",
-        status: 404,
-        success: false,
-      });
-    });
-
-    it.skip("Should return 404 ('Customer' not found)", async () => {
-      const payload = {
-        limit: 10,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/customers/store/${store._id.toString()}`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .send(payload);
-
-      // expect(status).toBe(404);
-      expect(body).toEqual({
-        data: "Customer not found",
         message: "Not Found!!!",
         status: 404,
         success: false,

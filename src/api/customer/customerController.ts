@@ -12,10 +12,10 @@ import {
   Customer,
   CustomerSchema,
   CustomerSchemaWithId,
-  GetCustomerSchemaById,
   GetCustomerSchemaByStoreId,
   PatchCustomerSchema,
 } from "./customerModel";
+import WithStoreId from "../../utils/withStoreId";
 import createEditor from "../../utils/editor/editorController";
 import ResponseData from "../../utils/responseHandler";
 import verifyCookies from "../../utils/cookiesHandler";
@@ -93,8 +93,7 @@ export const getCustomerById = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const customer_data: GetCustomerSchemaById =
-      await GetCustomerSchemaById.parseAsync(req.body);
+    const customer_data: WithStoreId = await WithStoreId.parseAsync(req.query);
     const customer_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -112,11 +111,9 @@ export const getCustomerById = async (
 
     checkUserWorkAtStore(user, store._id);
 
-    const store_customer_mapping = store.customers.map((value) =>
-      value.toString()
-    );
+    const store_customers = store.customers.map((value) => value.toString());
 
-    if (!store_customer_mapping.includes(customer_id))
+    if (!store_customers.includes(customer_id))
       throw new RequestError(
         404,
         "Not Found!!!",
@@ -141,9 +138,10 @@ export const getCustomerByStoreId = async (
   next: NextFunction
 ) => {
   try {
-    const customers: Array<CustomerSchemaWithId> = [];
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const customer_data = await GetCustomerSchemaByStoreId.parseAsync(req.body); // TODO  using limit
+    const { limit, from } = await GetCustomerSchemaByStoreId.parseAsync(
+      req.query
+    );
     const store_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -154,17 +152,17 @@ export const getCustomerByStoreId = async (
 
     checkUserWorkAtStore(user, store._id);
 
-    for (const customer of store.customers) {
-      const selected_customer: CustomerSchemaWithId = await Customer.findOne({
-        _id: new ObjectId(customer),
-      }).then((value) => {
-        if (value === null)
-          throw new RequestError(404, "Not Found!!!", "Customer not found");
-        return value;
-      });
-
-      customers.push(selected_customer);
-    }
+    const skip: number = from ? from : 0;
+    const store_customers: Array<ObjectId> = store.customers.map(
+      (customer) => new ObjectId(customer)
+    );
+    const customers: Array<CustomerSchemaWithId> = await Customer.find({
+      _id: { $in: store_customers },
+    })
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
 
     const response = new ResponseData(
       true,
@@ -244,8 +242,7 @@ export const deleteCustomer = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const customer_data: GetCustomerSchemaById =
-      await GetCustomerSchemaById.parseAsync(req.body);
+    const customer_data: WithStoreId = await WithStoreId.parseAsync(req.body);
     const customer_id = req.params.id;
     const { auth_token } = req.body;
 

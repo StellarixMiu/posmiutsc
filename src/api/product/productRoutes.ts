@@ -20,10 +20,10 @@ import {
   patchProductImage,
 } from "./productController";
 import upload from "../../middleware/imageMiddleware";
-import ParamsWithId from "../../utils/params/paramsModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
-import requestValidation from "../../middleware/validationMiddleware";
 import queryParse from "../../middleware/queryMiddleware";
+import WithStoreId from "../../utils/withStoreId";
+import ParamsWithId from "../../utils/params/paramsModel";
+import requestValidation from "../../middleware/validationMiddleware";
 
 const router = Router();
 
@@ -41,7 +41,7 @@ router.post(
   upload.single("image"),
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    body: WithStoreId,
   }),
   verifyToken(),
   addProductImage
@@ -51,7 +51,7 @@ router.get(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    query: BodyWithStoreId,
+    query: WithStoreId,
   }),
   verifyToken(),
   getProductById
@@ -91,7 +91,7 @@ router.patch(
   upload.single("image"),
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    body: WithStoreId,
   }),
   verifyToken(),
   patchProductImage
@@ -111,7 +111,7 @@ router.delete(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    body: WithStoreId,
   }),
   verifyToken(),
   deleteProduct

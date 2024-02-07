@@ -29,10 +29,10 @@ import {
   ProductSchema,
   ProductSchemaWithId,
 } from "./productModel";
+import WithStoreId from "../../utils/withStoreId";
 import createEditor from "../../utils/editor/editorController";
 import ResponseData from "../../utils/responseHandler";
 import verifyCookies from "../../utils/cookiesHandler";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 import checkForIdMismatch from "../../utils/CheckId";
 import checkUserWorkAtStore from "../../utils/checkWorkAt";
 
@@ -204,7 +204,7 @@ export const addProductImage = async (
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const product_id = req.params.id;
     const file = req.file;
-    const { store_id } = await BodyWithStoreId.parseAsync(req.body);
+    const { store_id } = await WithStoreId.parseAsync(req.body);
     const { auth_token } = req.body;
 
     if (!file) throw new RequestError(404, "Not Found!!!", "File not found");
@@ -287,9 +287,7 @@ export const getProductById = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const product_data: BodyWithStoreId = await BodyWithStoreId.parseAsync(
-      req.query
-    );
+    const product_data: WithStoreId = await WithStoreId.parseAsync(req.query);
     const product_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -347,15 +345,15 @@ export const getProductByStoreId = async (
 
     checkUserWorkAtStore(user, store._id);
 
-    const skip: number = from ? -from : 0;
+    const skip: number = from ? from : 0;
     const store_products: Array<ObjectId> = store.products.map(
       (product) => new ObjectId(product)
     );
     const products: Array<ProductSchemaWithId> = await Product.find({
       _id: { $in: store_products },
     })
+      .sort({ _id: -1 })
       .skip(skip)
-      .limit(limit)
       .toArray()
       .then(async (values) => {
         for (let i = 0; i < values.length; i++) {
@@ -507,7 +505,7 @@ export const patchProductImage = async (
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const product_id = req.params.id;
     const file = req.file;
-    const { store_id } = await BodyWithStoreId.parseAsync(req.body);
+    const { store_id } = await WithStoreId.parseAsync(req.body);
     const { auth_token } = req.body;
 
     if (!file) throw new RequestError(404, "Not Found!!!", "File not found");
@@ -680,9 +678,7 @@ export const deleteProduct = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const product_data: BodyWithStoreId = await BodyWithStoreId.parseAsync(
-      req.body
-    );
+    const product_data: WithStoreId = await WithStoreId.parseAsync(req.body);
     const product_id = req.params.id;
     const { auth_token } = req.body;
 

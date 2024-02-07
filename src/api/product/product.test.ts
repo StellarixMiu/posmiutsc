@@ -978,6 +978,7 @@ describe("GET: `/api/products/store/:id`", () => {
   it("Should return 200 (successfully)", async () => {
     const payload = {
       limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
@@ -1022,7 +1023,8 @@ describe("GET: `/api/products/store/:id`", () => {
   describe("wrong data type", () => {
     it("Should return 422 (wrong params type)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/products/store/${invalid_params}`)
@@ -1041,7 +1043,28 @@ describe("GET: `/api/products/store/:id`", () => {
 
     it("Should return 422 (wrong 'limit' type)", async () => {
       const payload = {
-        limit: -10,
+        limit: -1,
+        from: 1,
+      };
+      const { status, body } = await supertest(app)
+        .get(`/api/products/store/${store._id.toString()}`)
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .query(payload);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: expect.any(Array),
+        message: "ZodError!!!",
+        status: 422,
+        success: false,
+      });
+    });
+
+    it("Should return 422 (wrong 'from' type)", async () => {
+      const payload = {
+        limit: 1,
+        from: -1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/products/store/${store._id.toString()}`)
@@ -1061,7 +1084,8 @@ describe("GET: `/api/products/store/:id`", () => {
 
   it("Should return 401 (different auth id)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
@@ -1080,7 +1104,8 @@ describe("GET: `/api/products/store/:id`", () => {
 
   it("Should return 401 (no cookies)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
@@ -1116,7 +1141,8 @@ describe("GET: `/api/products/store/:id`", () => {
 
   it("Should return 403 (invalid auth header)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
@@ -1135,7 +1161,8 @@ describe("GET: `/api/products/store/:id`", () => {
 
   it("Should return 403 (no access store)", async () => {
     const payload = {
-      limit: 10,
+      limit: 1,
+      from: 1,
     };
     const { status, body } = await supertest(app)
       .get(`/api/products/store/${store._id.toString()}`)
@@ -1155,7 +1182,8 @@ describe("GET: `/api/products/store/:id`", () => {
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/products/store/${store._id.toString()}`)
@@ -1174,7 +1202,8 @@ describe("GET: `/api/products/store/:id`", () => {
 
     it("Should return 404 ('Store' not found)", async () => {
       const payload = {
-        limit: 10,
+        limit: 1,
+        from: 1,
       };
       const { status, body } = await supertest(app)
         .get(`/api/products/store/${lost_store._id.toString()}`)

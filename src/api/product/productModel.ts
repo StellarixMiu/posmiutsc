@@ -2,7 +2,7 @@ import { z } from "zod";
 import { WithId, ObjectId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
+import WithStoreId from "../../utils/withStoreId";
 
 const multiWhitespaceRegex = new RegExp(/\s+/g);
 const slugRegex = new RegExp(/^[a-zA-Z0-9-]*$/);
@@ -102,7 +102,7 @@ const CreateProductSchema = ProductSchema.omit({
     sku: true,
     upc: true,
   })
-  .merge(BodyWithStoreId);
+  .merge(WithStoreId);
 const GetProductSchemaByStoreId = z.object({
   from: z.number().nonnegative().finite().default(0).optional(),
   limit: z.number().nonnegative().finite().gte(1).lte(99).default(20),
@@ -121,8 +121,8 @@ const PatchProductSchema = ProductSchema.pick({
   upc: true,
 })
   .partial()
-  .merge(BodyWithStoreId);
-const PatchStockProductSchema = BodyWithStoreId.merge(
+  .merge(WithStoreId);
+const PatchStockProductSchema = WithStoreId.merge(
   z.object({
     before: z.number().nonnegative().finite(),
     after: z.number().nonnegative().finite(),

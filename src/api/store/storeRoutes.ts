@@ -4,7 +4,6 @@ import {
   CreateStoreSchema,
   GetStoreSchemaByUserId,
   PatchStoreSchema,
-  QueryGetStoreSchemaByUserId,
 } from "./storeModel";
 import {
   addStoreLogo,
@@ -19,7 +18,6 @@ import {
 import upload from "../../middleware/imageMiddleware";
 import ParamsWithId from "../../utils/params/paramsModel";
 import requestValidation from "../../middleware/validationMiddleware";
-import queryParse from "../../middleware/queryMiddleware";
 
 const router = Router();
 
@@ -60,10 +58,9 @@ router.get(
 
 router.get(
   "/user/:id",
-  queryParse(QueryGetStoreSchemaByUserId),
   requestValidation({
     params: ParamsWithId,
-    query: GetStoreSchemaByUserId,
+    body: GetStoreSchemaByUserId,
   }),
   verifyToken(),
   getStoreByUserId

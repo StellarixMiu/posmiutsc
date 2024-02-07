@@ -291,8 +291,10 @@ export const getStoreByUserId = async (
   next: NextFunction
 ) => {
   try {
+    const stores: Array<StoreSchemaWithId> = [];
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const { limit, from } = await GetStoreSchemaByUserId.parseAsync(req.query);
+    const store_data: GetStoreSchemaByUserId =
+      await GetStoreSchemaByUserId.parseAsync(req.body);
     const user_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -300,26 +302,23 @@ export const getStoreByUserId = async (
     checkForIdMismatch(auth_token.id, user_id);
 
     let user: UserSchemaWithId = await getUser(auth_token.id);
-    const skip: number = from ? from : 0;
-    const works = user.work_at.map((value) => new ObjectId(value));
-    const stores: Array<StoreSchemaWithId> = await Store.find({
-      _id: { $in: works },
-    })
-      .sort({ _id: -1 })
-      .skip(skip)
-      .limit(limit)
-      .toArray()
-      .then(async (values) => {
-        for (let i = 0; i < values.length; i++) {
-          if (values[i].logo && values[i].logo.toString().length !== 0) {
-            const image: ImageSchemaWithId = await getImage(
-              values[i].logo.toString()
-            );
-            values[i].logo = image.full_path;
-          }
-        }
-        return values;
+    for (const store_id of user.work_at) {
+      let store: StoreSchemaWithId = await Store.findOne({
+        _id: new ObjectId(store_id),
+      }).then(async (value) => {
+        if (value === null)
+          throw new RequestError(404, "Not Found!!!", "Store not found");
+        return value;
       });
+
+      if (store.logo) {
+        const logo: ImageSchemaWithId = await getImage(store.logo.toString());
+        store.logo = logo.full_path;
+      }
+
+      stores.push(store);
+    }
+
     const response = new ResponseData(
       true,
       200,

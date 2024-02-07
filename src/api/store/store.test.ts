@@ -692,15 +692,10 @@ describe("GET: `/api/stores/:id", () => {
 
 describe("GET: `/api/stores/user/:id", () => {
   it("Should return 200 (successfully)", async () => {
-    const payload = {
-      limit: 1,
-      from: 1,
-    };
     const { status, body } = await supertest(app)
       .get(`/api/stores/user/${user._id.toString()}`)
       .set("Cookie", user.cookies)
-      .set("Authorization", user.bearer_token)
-      .query(payload);
+      .set("Authorization", user.bearer_token);
 
     expect(status).toBe(200);
     expect(body).toEqual({
@@ -724,6 +719,25 @@ describe("GET: `/api/stores/user/:id", () => {
           type: "grocery",
           website: "",
         },
+        {
+          _id: expect.any(String),
+          address: "Jl Dinoyo 42, Jawa Timur",
+          categories: [],
+          coupons: [],
+          customers: [],
+          email: "test0@gmail.com",
+          employees: [],
+          invoice: {
+            isEnable: true,
+          },
+          logo: expect.any(String),
+          name: "sgroceries",
+          owner: expect.any(String),
+          phone_number: "6285110735634",
+          products: [],
+          type: "grocery",
+          website: "",
+        },
       ],
       message: "Get store by user id successfully!!",
       status: 200,
@@ -733,55 +747,10 @@ describe("GET: `/api/stores/user/:id", () => {
 
   describe("wrong data type", () => {
     it("Should return 422 (wrong params type)", async () => {
-      const payload = {
-        limit: 1,
-        from: 1,
-      };
       const { status, body } = await supertest(app)
         .get(`/api/stores/user/${invalid_params}`)
         .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .query(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'limit' type)", async () => {
-      const payload = {
-        limit: -1,
-        from: 1,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/user/${user._id.toString()}`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .query(payload);
-
-      expect(status).toBe(422);
-      expect(body).toEqual({
-        data: expect.any(Array),
-        message: "ZodError!!!",
-        status: 422,
-        success: false,
-      });
-    });
-
-    it("Should return 422 (wrong 'from' type)", async () => {
-      const payload = {
-        limit: 1,
-        from: -1,
-      };
-      const { status, body } = await supertest(app)
-        .get(`/api/stores/user/${user._id.toString()}`)
-        .set("Cookie", user.cookies)
-        .set("Authorization", user.bearer_token)
-        .query(payload);
+        .set("Authorization", user.bearer_token);
 
       expect(status).toBe(422);
       expect(body).toEqual({
@@ -794,15 +763,10 @@ describe("GET: `/api/stores/user/:id", () => {
   });
 
   it("Should return 401 (different auth id)", async () => {
-    const payload = {
-      limit: 1,
-      from: 1,
-    };
     const { status, body } = await supertest(app)
       .get(`/api/stores/user/${user._id.toString()}`)
       .set("Cookie", second_user.cookies)
-      .set("Authorization", user.bearer_token)
-      .query(payload);
+      .set("Authorization", user.bearer_token);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -814,14 +778,9 @@ describe("GET: `/api/stores/user/:id", () => {
   });
 
   it("Should return 401 (no cookies)", async () => {
-    const payload = {
-      limit: 1,
-      from: 1,
-    };
     const { status, body } = await supertest(app)
       .get(`/api/stores/user/${user._id.toString()}`)
-      .set("Authorization", user.bearer_token)
-      .query(payload);
+      .set("Authorization", user.bearer_token);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -833,14 +792,9 @@ describe("GET: `/api/stores/user/:id", () => {
   });
 
   it("Should return 401 (no auth header)", async () => {
-    const payload = {
-      limit: 1,
-      from: 1,
-    };
     const { status, body } = await supertest(app)
       .get(`/api/stores/user/${user._id.toString()}`)
-      .set("Cookie", user.cookies)
-      .query(payload);
+      .set("Cookie", user.cookies);
 
     expect(status).toBe(401);
     expect(body).toEqual({
@@ -852,15 +806,10 @@ describe("GET: `/api/stores/user/:id", () => {
   });
 
   it("Should return 403 (invalid auth header)", async () => {
-    const payload = {
-      limit: 1,
-      from: 1,
-    };
     const { status, body } = await supertest(app)
       .get(`/api/stores/user/${user._id.toString()}`)
       .set("Cookie", user.cookies)
-      .set("Authorization", invalid_bearer)
-      .query(payload);
+      .set("Authorization", invalid_bearer);
 
     expect(status).toBe(403);
     expect(body).toEqual({
@@ -873,19 +822,44 @@ describe("GET: `/api/stores/user/:id", () => {
 
   describe("'SOMETHING' not found", () => {
     it("Should return 404 ('User' not found)", async () => {
-      const payload = {
-        limit: 1,
-        from: 1,
-      };
       const { status, body } = await supertest(app)
         .get(`/api/stores/user/${lost_user._id.toString()}`)
         .set("Cookie", lost_user.cookies)
-        .set("Authorization", lost_user.bearer_token)
-        .query(payload);
+        .set("Authorization", lost_user.bearer_token);
 
       expect(status).toBe(404);
       expect(body).toEqual({
         data: "User not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Store' not found)", async () => {
+      await supertest(app)
+        .post("/api/stores/")
+        .set("Cookie", second_user.cookies)
+        .set("Authorization", second_user.bearer_token)
+        .send({
+          name: "The corner shop",
+          address: "Jl Dinoyo 12, Jawa Timur",
+          phone_number: "6285110738411",
+          email: "test80@gmail.com",
+          type: "Grocery",
+        })
+        .then(async ({ body }) => {
+          await Store.deleteOne({ _id: new ObjectId(body.data._id) });
+        });
+
+      const { status, body } = await supertest(app)
+        .get(`/api/stores/user/${second_user._id.toString()}`)
+        .set("Cookie", second_user.cookies)
+        .set("Authorization", second_user.bearer_token);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Store not found",
         message: "Not Found!!!",
         status: 404,
         success: false,

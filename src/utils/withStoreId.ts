@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 
-const BodyWithStoreId = z.object({
+const WithStoreId = z.object({
   store_id: z.string().refine(
     (value) => {
       try {
@@ -14,6 +14,6 @@ const BodyWithStoreId = z.object({
   ),
 });
 
-type BodyWithStoreId = z.infer<typeof BodyWithStoreId>;
+type WithStoreId = z.infer<typeof WithStoreId>;
 
-export default BodyWithStoreId;
+export default WithStoreId;

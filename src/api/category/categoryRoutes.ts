@@ -4,6 +4,7 @@ import {
   CreateCategorySchema,
   GetCategorySchemaByStoreId,
   ProductToCategorySchema,
+  QueryGetCategorySchemaByStoreId,
 } from "./categoryModel";
 import {
   AddToCategory,
@@ -13,8 +14,9 @@ import {
   getCategoryByStoreId,
   removeProductFromCategory,
 } from "./categoryController";
+import queryParse from "../../middleware/queryMiddleware";
+import WithStoreId from "../../utils/withStoreId";
 import ParamsWithId from "../../utils/params/paramsModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 import requestValidation from "../../middleware/validationMiddleware";
 
 const router = Router();
@@ -42,7 +44,7 @@ router.get(
   "/:id",
   requestValidation({
     params: ParamsWithId,
-    body: BodyWithStoreId,
+    query: WithStoreId,
   }),
   verifyToken(),
   getCategoryById
@@ -50,7 +52,11 @@ router.get(
 
 router.get(
   "/store/:id",
-  requestValidation({ params: ParamsWithId, body: GetCategorySchemaByStoreId }),
+  queryParse(QueryGetCategorySchemaByStoreId),
+  requestValidation({
+    params: ParamsWithId,
+    query: GetCategorySchemaByStoreId,
+  }),
   verifyToken(),
   getCategoryByStoreId
 );
@@ -67,7 +73,7 @@ router.delete(
 
 router.delete(
   "/:id",
-  requestValidation({ params: ParamsWithId, body: BodyWithStoreId }),
+  requestValidation({ params: ParamsWithId, body: WithStoreId }),
   verifyToken(),
   deleteCategory
 );

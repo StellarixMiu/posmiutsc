@@ -13,12 +13,13 @@ import {
   Category,
   CategorySchemaWithId,
   CreateCategorySchema,
+  GetCategorySchemaByStoreId,
   ProductToCategorySchema,
 } from "./categoryModel";
+import WithStoreId from "../../utils/withStoreId";
 import ResponseData from "../../utils/responseHandler";
 import createEditor from "../../utils/editor/editorController";
 import verifyCookies from "../../utils/cookiesHandler";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
 import checkForIdMismatch from "../../utils/CheckId";
 import checkUserWorkAtStore from "../../utils/checkWorkAt";
 
@@ -245,9 +246,7 @@ export const getCategoryById = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const category_data: BodyWithStoreId = await BodyWithStoreId.parseAsync(
-      req.body
-    );
+    const category_data: WithStoreId = await WithStoreId.parseAsync(req.query);
     const category_id = req.params.id;
     const { auth_token } = req.body;
 
@@ -290,9 +289,11 @@ export const getCategoryByStoreId = async (
   next: NextFunction
 ) => {
   try {
-    const categories: Array<Object> = [];
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
     const store_id = req.params.id;
+    const { limit, from } = await GetCategorySchemaByStoreId.parseAsync(
+      req.query
+    );
     const { auth_token } = req.body;
 
     checkForIdMismatch(auth_token.id, cookies.id);
@@ -302,39 +303,38 @@ export const getCategoryByStoreId = async (
 
     checkUserWorkAtStore(user, store._id);
 
-    for (const category_id of store.categories) {
-      let category: CategorySchemaWithId = await Category.findOne({
-        _id: new ObjectId(category_id.toString()),
-      }).then((value) => {
-        if (value === null)
-          throw new RequestError(404, "Not Found!!!", "Category not found");
-        return value;
-      });
-
-      checkStoreHasCategory(category, store);
-
+    const selected_categories: Array<Object> = [];
+    const skip: number = from ? from : 0;
+    const store_categories: Array<ObjectId> = store.categories.map(
+      (product) => new ObjectId(product)
+    );
+    const categories: Array<CategorySchemaWithId> = await Category.find({
+      _id: { $in: store_categories },
+    })
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+    categories.forEach((category) => {
       const { stores, ...metadata } = category;
-
-      categories.push({
+      selected_categories.push({
         ...metadata,
-        store: stores.filter(
+        store: category.stores.filter(
           (selected) => selected.id.toString() === store._id.toString()
         )[0],
       });
-    }
-
+    });
     const response = new ResponseData(
       true,
       200,
       "Get category by store id successfully!!",
-      categories
+      selected_categories
     );
     return res.status(200).json(response);
   } catch (error: any) {
     next(error);
   }
 };
-// TODO line 181
 
 export const removeProductFromCategory = async (
   req: Request,
@@ -435,9 +435,7 @@ export const deleteCategory = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const category_data: BodyWithStoreId = await BodyWithStoreId.parseAsync(
-      req.body
-    );
+    const category_data: WithStoreId = await WithStoreId.parseAsync(req.body);
     const category_id = req.params.id;
     const { auth_token } = req.body;
 

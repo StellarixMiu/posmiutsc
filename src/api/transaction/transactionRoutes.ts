@@ -2,7 +2,7 @@ import { Router } from "express";
 import { verifyToken } from "../../middleware/tokenMiddleware";
 import { createTransaction, getTransactionById } from "./transactionController";
 import { CreateTransactionsSchema } from "./transactionModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
+import WithStoreId from "../../utils/withStoreId";
 import ParamsWithId from "../../utils/params/paramsModel";
 import requestValidation from "../../middleware/validationMiddleware";
 
@@ -17,7 +17,7 @@ router.post(
 
 router.get(
   "/:id",
-  requestValidation({ params: ParamsWithId, body: BodyWithStoreId }),
+  requestValidation({ params: ParamsWithId, body: WithStoreId }),
   verifyToken(),
   getTransactionById
 );

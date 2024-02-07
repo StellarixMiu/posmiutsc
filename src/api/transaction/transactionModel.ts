@@ -2,8 +2,7 @@ import { z } from "zod";
 import { ObjectId, WithId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
-import BodyWithStoreId from "../../utils/body/BodyWithStoreId";
-import BodyWithLimit from "../../utils/body/BodyWithLimit";
+import WithStoreId from "../../utils/withStoreId";
 
 enum TransactionsStatusEnum {
   FAILED = "FAILED",
@@ -15,10 +14,6 @@ enum PaymentMethodsEnum {
   CASH = "CASH",
   PAYMENT_GATEWAY = "PAYMENT_GATEWAY",
 }
-
-const Limit = z.object({
-  limit: z.number().nonnegative().finite().gte(1).lte(10).default(5).optional(),
-});
 
 const TransactionsSchema = z.object({
   customer: z.instanceof(ObjectId).or(
@@ -79,24 +74,41 @@ const CreateTransactionsSchema = TransactionsSchema.pick({
   customer: true,
   products: true,
   applied_coupons: true,
-}).merge(BodyWithStoreId);
+}).merge(WithStoreId);
 const GetTransactionsSchemaByStoreId = z.object({
-  limit: z.number().nonnegative().finite().gte(1).lte(10).default(5).optional(),
+  from: z.number().nonnegative().finite().default(0).optional(),
+  limit: z.number().nonnegative().finite().gte(1).lte(99).default(20),
 });
-const GetTransactionsSchemaByCustomerId = BodyWithStoreId.merge(
-  z.object({
-    customer_id: z.string().refine(
-      (value) => {
-        try {
-          return new ObjectId(value);
-        } catch (error) {
-          return false;
-        }
-      },
-      { message: "`customer_id` should be an valid ObjectId" }
-    ),
-  })
-).merge(BodyWithLimit);
+const GetTransactionsSchemaByCustomerId = WithStoreId.merge(
+  z
+    .object({
+      customer_id: z.string().refine(
+        (value) => {
+          try {
+            return new ObjectId(value);
+          } catch (error) {
+            return false;
+          }
+        },
+        { message: "`customer_id` should be an valid ObjectId" }
+      ),
+    })
+    .merge(
+      z.object({
+        from: z.number().nonnegative().finite().default(0).optional(),
+        limit: z.number().nonnegative().finite().gte(1).lte(99).default(20),
+      })
+    )
+);
+
+const QueryGetTransactionsSchemaByStoreId = z.object({
+  from: z
+    .string()
+    .default("0")
+    .transform((value) => parseInt(value))
+    .optional(),
+  limit: z.string().transform((value) => parseInt(value)),
+});
 
 type TransactionsSchema = z.infer<typeof TransactionsSchema>;
 type CreateTransactionsSchema = z.infer<typeof CreateTransactionsSchema>;
@@ -108,6 +120,10 @@ type GetTransactionsSchemaByCustomerId = z.infer<
 >;
 type TransactionsSchemaWithId = WithId<TransactionsSchema>;
 
+type QueryGetTransactionsSchemaByStoreId = z.infer<
+  typeof QueryGetTransactionsSchemaByStoreId
+>;
+
 const Transaction = database.collection<TransactionsSchema>("Transactions");
 
 Transaction.createIndex({ customer: 1 });
@@ -116,6 +132,7 @@ Transaction.createIndex({ total_amount: 1 });
 Transaction.createIndex({ total_price: 1 });
 
 export {
+  Transaction,
   TransactionsSchema,
   CreateTransactionsSchema,
   GetTransactionsSchemaByStoreId,
@@ -123,5 +140,5 @@ export {
   TransactionsSchemaWithId,
   TransactionsStatusEnum,
   PaymentMethodsEnum,
-  Transaction,
+  QueryGetTransactionsSchemaByStoreId,
 };

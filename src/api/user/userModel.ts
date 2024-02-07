@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { WithId, ObjectId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
+import removeMultiWhitespace from "../../utils/removeMultiWhitespace";
 
 const accountTypeEnum = ["FREE", "PAID"] as const;
-const multiWhitespaceRegex = new RegExp(/\s+/g);
 
 const UserSchema = z.object({
   name: z
@@ -13,7 +13,7 @@ const UserSchema = z.object({
     })
     .min(3, "`name` length must be more than 3")
     .toLowerCase()
-    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
+    .transform((value) => removeMultiWhitespace(value)),
   email: z
     .string({
       required_error: "`email` is required",
@@ -37,7 +37,7 @@ const UserSchema = z.object({
     .min(10, "`phone_number` length must between 10 and 15 digits")
     .max(15, "`phone_number` length must between 10 and 15 digits")
     .regex(/^\d+$/, "`phone_number` must be a valid number"),
-  account_type: z.enum(accountTypeEnum).default("FREE"),
+  account_type: z.enum(accountTypeEnum).default(accountTypeEnum[0]),
   image: z.instanceof(ObjectId).or(z.string()).default(""),
   token: z
     .object({

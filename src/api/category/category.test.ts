@@ -57,6 +57,59 @@ describe("POST: `/api/categories/`", () => {
     });
   });
 
+  it("Should return 200 (with products id successfully)", async () => {
+    const payload = {
+      name: "Shoes",
+      store_id: store._id.toString(),
+      products: [user.product._id],
+    };
+    const { status, body } = await supertest(app)
+      .post("/api/categories/")
+      .set("Cookie", user.cookies)
+      .set("Authorization", user.bearer_token)
+      .send(payload);
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      data: {
+        _id: expect.any(String),
+        name: "shoes",
+        store: {
+          id: expect.any(String),
+          products: [
+            {
+              _id: expect.any(String),
+              base_price: 15000,
+              description:
+                "This Ultra Clean Toothbrush is designed to give you a superior brushing experience.",
+              dimensions: {
+                height: 0,
+                length: 0,
+                unit: "MM",
+                width: 0,
+              },
+              image: "",
+              isFavorite: false,
+              name: "toothbrush",
+              price: 15000,
+              sku: "",
+              slug: "toothbrush",
+              stock: 10,
+              upc: "",
+              weight: {
+                unit: "GRAM",
+                value: 0,
+              },
+            },
+          ],
+        },
+      },
+      message: "Create category successfully!!",
+      status: 200,
+      success: true,
+    });
+  });
+
   describe("wrong body data type", () => {
     it("Should return 422 (wrong data type)", async () => {
       const payload = {
@@ -78,8 +131,6 @@ describe("POST: `/api/categories/`", () => {
         success: false,
       });
     });
-
-    it.todo("Should return 200 (with products id successfully)");
 
     it("Should return 422 (wrong 'store_id' data type)", async () => {
       const payload = {
@@ -123,7 +174,26 @@ describe("POST: `/api/categories/`", () => {
       });
     });
 
-    it.todo("Should return 422 (wrong 'products' data type)");
+    it("Should return 422 (wrong 'products' data type)", async () => {
+      const payload = {
+        name: "T-Shirt",
+        store_id: store._id.toString(),
+        products: [invalid_store_id],
+      };
+      const { status, body } = await supertest(app)
+        .post("/api/categories/")
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .send(payload);
+
+      expect(status).toBe(422);
+      expect(body).toEqual({
+        data: expect.any(Array),
+        message: "ZodError!!!",
+        status: 422,
+        success: false,
+      });
+    });
   });
 
   it("Should return 401 (different auth id)", async () => {
@@ -229,9 +299,30 @@ describe("POST: `/api/categories/`", () => {
     });
   });
 
+  it("Should return 400 (Product already has a category)", async () => {
+    const payload = {
+      name: "Jacket",
+      store_id: store._id.toString(),
+      products: [user.product._id],
+    };
+    const { status, body } = await supertest(app)
+      .post("/api/categories/")
+      .set("Cookie", user.cookies)
+      .set("Authorization", user.bearer_token)
+      .send(payload);
+
+    expect(status).toBe(400);
+    expect(body).toEqual({
+      data: "Product already has a category assigned",
+      message: "Bad Request!!!",
+      status: 400,
+      success: false,
+    });
+  });
+
   it("Should return 400 (store already has the category)", async () => {
     const payload = {
-      name: "Fruits",
+      name: category.name,
       store_id: store._id.toString(),
       products: [],
     };
@@ -287,6 +378,27 @@ describe("POST: `/api/categories/`", () => {
       expect(status).toBe(404);
       expect(body).toEqual({
         data: "Store not found",
+        message: "Not Found!!!",
+        status: 404,
+        success: false,
+      });
+    });
+
+    it("Should return 404 ('Product not found in store)", async () => {
+      const payload = {
+        name: "Electronics",
+        store_id: store._id.toString(),
+        products: [second_user.product._id],
+      };
+      const { status, body } = await supertest(app)
+        .post("/api/categories/")
+        .set("Cookie", user.cookies)
+        .set("Authorization", user.bearer_token)
+        .send(payload);
+
+      expect(status).toBe(404);
+      expect(body).toEqual({
+        data: "Product is not available in store",
         message: "Not Found!!!",
         status: 404,
         success: false,
@@ -903,7 +1015,7 @@ describe("GET:`/api/categories/store/:id`", () => {
       data: [
         {
           _id: expect.any(String),
-          name: "vegetables",
+          name: "electronics",
           store: {
             id: expect.any(String),
             products: expect.any(Array<String>),

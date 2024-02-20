@@ -60,7 +60,6 @@ export const createCategory = async (
 ) => {
   try {
     const cookies: JwtPayload = verifyCookies(req.cookies.refresh_token);
-    const products: Array<string | ObjectId> = [];
     const category_data: CreateCategorySchema =
       await CreateCategorySchema.parseAsync(req.body);
     const { auth_token } = req.body;
@@ -69,63 +68,94 @@ export const createCategory = async (
 
     let user: UserSchemaWithId = await getUser(auth_token.id);
     let store: StoreSchemaWithId = await getStore(category_data.store_id);
+    let products: Array<ProductSchemaWithId> = [];
 
     checkUserWorkAtStore(user, store._id);
 
     if (category_data.products.length !== 0) {
-      for (let i = 0; i < category_data.products.length; i++) {
-        const product_id = category_data.products[i];
-        const product: ProductSchemaWithId = await Product.findOne(
-          new ObjectId(product_id)
-        ).then((value) => {
-          if (value === null)
-            throw new RequestError(404, "Not Found!!!", "Product not found");
-          if (!store.products.includes(value._id))
-            throw new RequestError(
-              404,
-              "Not Found!!!",
-              "Product is not available in store"
-            );
-          return value;
-        });
-        products.push(product._id);
-      }
+      const req_products: Array<ObjectId> = category_data.products.map(
+        (product) => new ObjectId(product)
+      );
+      products = await Product.find({
+        _id: { $in: req_products },
+      })
+        .sort({ _id: -1 })
+        .toArray();
+      const productsHasCategories: Array<CategorySchemaWithId> =
+        await Category.find({
+          "stores.products": { $in: products.map((value) => value._id) },
+        }).toArray();
+
+      products.forEach((value: ProductSchemaWithId) => {
+        if (
+          !store.products
+            .map((value) => value.toString())
+            .includes(value._id.toString())
+        )
+          throw new RequestError(
+            404,
+            "Not Found!!!",
+            "Product is not available in store"
+          );
+      });
+      if (productsHasCategories.length !== 0)
+        throw new RequestError(
+          400,
+          "Bad Request!!!",
+          "Product already has a category assigned"
+        );
     }
 
     const editor: EditorSchema = await createEditor(user._id.toString());
     let category: CategorySchemaWithId = await Category.findOneAndUpdate(
-      { name: category_data.name },
+      {
+        $and: [
+          {
+            $or: [{ name: category_data.name }],
+          },
+          {
+            $or: [{ stores: { $elemMatch: { id: store._id } } }],
+          },
+        ],
+      },
       {
         $push: {
           stores: {
-            id: category_data.store_id,
-            products: products || [],
+            id: store._id,
+            products: products.map((value) => value._id),
           },
         },
       },
       { returnDocument: "after" }
     ).then(async (value) => {
-      if (value !== null)
+      if (
+        value &&
+        value.stores
+          .map((val) => val.id.toString())
+          .includes(store._id.toString())
+      )
         throw new RequestError(
           400,
           "Bad Request!!!",
           "Store already has the category"
         );
 
-      const created_category = await Category.insertOne({
+      const { insertedId } = await Category.insertOne({
         name: category_data.name,
-        stores: [{ id: store._id, products: [] }],
+        stores: [
+          {
+            id: store._id,
+            products: products.map((value) => value._id),
+          },
+        ],
       });
-      const new_value = await Category.findOne({
-        _id: new ObjectId(created_category.insertedId),
-      }).then((new_created) => {
-        if (new_created === null)
+      return await Category.findOne({
+        _id: new ObjectId(insertedId),
+      }).then((value) => {
+        if (value === null)
           throw new RequestError(404, "Not Found!!!", "Category not found");
-        return new_created;
+        return value;
       });
-
-      value = new_value;
-      return value;
     });
 
     store = await Store.findOneAndUpdate(
@@ -145,7 +175,12 @@ export const createCategory = async (
       "Create category successfully!!",
       {
         ...metadata,
-        store: { id: store._id, products: [] },
+        store: {
+          id: store._id,
+          products: products.map(
+            ({ created, updated, ...metadata }) => metadata
+          ),
+        },
       }
     );
     return res.status(200).json(response);
@@ -306,7 +341,7 @@ export const getCategoryByStoreId = async (
     const selected_categories: Array<Object> = [];
     const skip: number = from ? from : 0;
     const store_categories: Array<ObjectId> = store.categories.map(
-      (product) => new ObjectId(product)
+      (category) => new ObjectId(category)
     );
     const categories: Array<CategorySchemaWithId> = await Category.find({
       _id: { $in: store_categories },

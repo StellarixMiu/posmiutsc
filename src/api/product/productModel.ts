@@ -3,11 +3,11 @@ import { WithId, ObjectId } from "mongodb";
 import { database } from "../../utils/databaseConnection";
 import { EditorSchema } from "../../utils/editor/editorModel";
 import WithStoreId from "../../utils/withStoreId";
+import removeMultiWhitespace from "../../utils/removeMultiWhitespace";
 
-const multiWhitespaceRegex = new RegExp(/\s+/g);
 const slugRegex = new RegExp(/^[a-zA-Z0-9-]*$/);
-const DimensionsUnitEnum = ["MM", "CM", "M", "INCH"] as const;
 const WeightUnitEnum = ["KG", "GRAM"] as const;
+const DimensionsUnitEnum = ["MM", "CM", "M", "INCH"] as const;
 
 const ProductSchema = z.object({
   slug: z
@@ -29,7 +29,7 @@ const ProductSchema = z.object({
     })
     .min(3, "`name` length must be more than 3")
     .toLowerCase()
-    .transform((value) => value.replace(multiWhitespaceRegex, " ").trim()),
+    .transform((value) => removeMultiWhitespace(value)),
   base_price: z.number().nonnegative().finite(),
   price: z.number().nonnegative().finite(),
   dimensions: z

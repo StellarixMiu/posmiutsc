@@ -354,6 +354,7 @@ export const getProductByStoreId = async (
     })
       .sort({ _id: -1 })
       .skip(skip)
+      .limit(limit)
       .toArray()
       .then(async (values) => {
         for (let i = 0; i < values.length; i++) {
